@@ -212,7 +212,7 @@ typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
 	float r,k,velx_in,vely_in;
-	bool isshoot,collision;
+	bool isshoot,collision_obj,collision_ground;
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
@@ -221,7 +221,7 @@ typedef struct ball{
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
-		collision=false;
+		collision_ground=collision_obj=false;
 		sx=sy=0;
 		vel = 500;
 		k=1;
@@ -239,6 +239,9 @@ typedef struct ball{
 		}
 		circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 		return;	
+	}
+	bool onground(){
+		return y<=-300&&isshoot;
 	}
 	void draw(float nx,float ny,float s){
 		glm::mat4 MVP;
@@ -258,6 +261,11 @@ typedef struct ball{
 		y /= wp;
 		z /= wp;
 		//printf("%f %f\n",x,y);
+		if (onground()&&collision_ground){
+			printf("onground\n");
+			collision_ground=false;
+
+		}
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
@@ -265,7 +273,7 @@ typedef struct ball{
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
-		if(!collision){
+		if(!collision_ground&&!collision_obj){
 			stx =x,sty=y;
 		}
 		//float ang = -1.f*pipe_rot*M_PI/180.f;
@@ -295,6 +303,7 @@ typedef struct ball{
 		//vely-=0.01*ti;
 		draw(0,25+10+15,s);
 	}
+
 	void move(float nx,float ny){
 		x=nx,y=ny;
 	}
@@ -335,13 +344,13 @@ typedef struct ground
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		if(b.isshoot&&b.vely<0&&!b.collision){
+		if(b.isshoot&&b.vely<0&&!b.collision_ground){
 			//printf("collided x:%f y:%f \n",b.x,b.y);
-			b.collision=true;
+			b.collision_ground=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			b.vel = b.velx*b.velx + b.vely*b.vely;  //vel is not working properly
-			//float ang = atan(-1*b.vely/b.velx);
-			b.shoot(M_PI/4.0f);  //angle is hard-coded for test
+			//b.vel = b.velx*b.velx + b.vely*b.vely;  //vel is not working properly
+			float ang = atan(-1*b.vely/b.velx);
+			b.shoot(M_PI/3.0f);  //angle is hard-coded for test
 		}
 	}
 
@@ -410,10 +419,10 @@ typedef struct obstacle
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision){
+		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision_obj){
 			float ang;
 			printf("collided x:%f y:%f \n",b.x,b.y);
-			b.collision=true;
+			b.collision_obj=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 			if(b.x<=-50)ang = M_PI/2.0 + atan(b.velx/b.vely);
 			else ang = -1.0*atan(b.vely/b.velx);
