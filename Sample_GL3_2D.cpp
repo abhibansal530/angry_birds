@@ -411,10 +411,12 @@ typedef struct obstacle
 	}
 	void checkCollision(ball &b){
 		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision){
+			float ang;
 			printf("collided x:%f y:%f \n",b.x,b.y);
 			b.collision=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			float ang = M_PI/2.0 + atan(b.velx/b.vely);
+			if(b.x<=-50)ang = M_PI/2.0 + atan(b.velx/b.vely);
+			else ang = -1.0*atan(b.vely/b.velx);
 			b.shoot(ang);
 		}
 	}
