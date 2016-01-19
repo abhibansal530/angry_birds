@@ -216,8 +216,10 @@ typedef struct ball{
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
 	glm::mat4 project;
+	glm::mat4 translate; 
 	void create(){
 		project = glm::mat4(1.0f);
+		translate = glm::mat4(1.0f);
 		int v=0,k=0,j=0;
 		float i;
 		for(i =0.5;i<=360;i+=0.5){
@@ -233,11 +235,11 @@ typedef struct ball{
 		circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 		return;	
 	}
-	void draw(float nx,float ny){
+	void draw(float nx,float ny,float s){
 		glm::mat4 MVP;
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
-		glm::mat4 translateBall = glm::translate(glm::vec3(nx,ny,0));
+		glm::mat4 translateBall = translate*glm::translate(glm::vec3(nx,ny*s,0));
 		glm::mat4 rotateBall = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
 		glm::mat4 translateBallagain = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
 		Matrices.model*=(project*translateBallagain*rotateBall*translateBall);
@@ -250,7 +252,7 @@ typedef struct ball{
 		x /= wp;
 		y /= wp;
 		z /= wp;
-		printf("%f %f\n",x,y);
+		//printf("%f %f\n",x,y);
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
@@ -267,7 +269,7 @@ typedef struct ball{
 		sx=x,sy=y;
 		velx=vel*cos(ang),vely=vel*sin(ang);
 	}
-	void fire(float ang,float ti){
+	void fire(float ang,float ti,float s){
 		float nx,ny;
 		float ct;
 		ti = glfwGetTime();
@@ -280,7 +282,7 @@ typedef struct ball{
 		//ti+=0.1;
 		project = glm::translate(glm::vec3(nx,ny,0));
 		//vely-=0.01*ti;
-		draw(0,0.25*100+0.01*100+0.15*100);
+		draw(0,25+10+15,s);
 	}
 	void move(float nx,float ny){
 		x=nx,y=ny;
@@ -468,13 +470,13 @@ void createBox()
 }
 void createPipe(){
 static const GLfloat vertex_buffer_data [] ={
-		-0.2*100,-0.5*100,0, // vertex 1
-		0.2*100,-0.5*100,0, // vertex 2
-		0.2*100, 0.5*100,0, // vertex 3
+		-20,-50,0, // vertex 1
+		20,-50,0, // vertex 2
+		20, 50,0, // vertex 3
 
-		0.2*100, 0.5*100,0, // vertex 3
-		-0.2*100, -0.5*100,0, // vertex 4
-		-0.2*100,0.5*100,0  // vertex 1
+		20, 50,0, // vertex 3
+		-20, -50,0, // vertex 4
+		-20,50,0  // vertex 1
 	};
 	static const GLfloat color_buffer_data [] = {
 		0,0,0, // color 1
@@ -489,21 +491,21 @@ static const GLfloat vertex_buffer_data [] ={
 }
 void createSpring(){
 static const GLfloat vertex_buffer_data [] ={
-		-0.01*100,-0.5*100,0, // vertex 1
-		0.01*100,-0.5*100,0, // vertex 2
-		0.01*100, 0.25*100,0, // vertex 3
+		-10,-50,0, // vertex 1
+		10,-50,0, // vertex 2
+		10, 25,0, // vertex 3
 
-		0.01*100, 0.25*100,0, // vertex 3
-		-0.01*100, -0.5*100,0, // vertex 4
-		-0.01*100,0.25*100,0,  // vertex 1
+		10, 25,0, // vertex 3
+		-10, -50,0, // vertex 4
+		-10,25,0,  // vertex 1
 
-		-0.1*100,0.25*100,0,
-		-0.1*100,0.25*100+0.01*100,0,
-		0.1*100,0.25*100,0,
+		-15,25,0,
+		-15,25+10,0,
+		15,25,0,
 
-		0.1*100,0.25*100,0,
-		-0.1*100,0.25*100,0,
-		0.1*100,0.25*100+0.01*100,0
+		-15,25+10,0,
+		15,25,0,
+		15,25+10,0
 	};
 	static const GLfloat color_buffer_data [] = {
 		1,1,1, // color 1
@@ -559,6 +561,7 @@ void createCircle(float r){
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
+float s = 1;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw ()
@@ -632,6 +635,7 @@ void draw ()
 	Matrices.model = glm::mat4(1.0f);
 	glm::mat4 translatePipe = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
 	glm::mat4 rotatePipe = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
+	
 	Matrices.model*=(translatePipe*rotatePipe);
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
@@ -639,9 +643,11 @@ void draw ()
 	draw3DObject(pipe);
 
 	Matrices.model = glm::mat4(1.0f);
+	glm::mat4 scaleSpring = glm::scale(glm::vec3(1,s,1));
+	glm::mat4 translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
 	glm::mat4 translateSpring = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
 	glm::mat4 rotateSpring = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
-	Matrices.model*=(translateSpring*rotateSpring);
+	Matrices.model*=(translateSpring*rotateSpring*translate*scaleSpring);
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 	draw3DObject(spring);	
@@ -650,8 +656,8 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	float ang = pipe_rot*M_PI/180.0f;
-	if(!my.isshoot)my.draw(0,0.25*100+0.01*100+0.15*100);
-	else my.fire(ang,glfwGetTime());
+	if(!my.isshoot)my.draw(0,25+10+15,s);
+	else my.fire(ang,glfwGetTime(),s);
 	//printf("ang: %f\n",ang);
 	/*Matrices.model = glm::mat4(1.0f);
 	glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -773,12 +779,18 @@ int main (int argc, char** argv)
 		glfwPollEvents();
 		if(glfwGetKey(window,GLFW_KEY_J)==GLFW_PRESS)pipe_rot+=1;
 		if(glfwGetKey(window,GLFW_KEY_L)==GLFW_PRESS)pipe_rot-=1;
+		//if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS)s*=0.9;
 
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
 	//	printf("%lf\n", current_time);
-		if ((current_time - last_update_time) >= 0.5) { // atleast 0.5s elapsed since last frame
+		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
+			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
+				s*=0.99;
+				my.translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
+			}
+			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS)s/=0.99;
 			last_update_time = current_time;
 		}
 	}
