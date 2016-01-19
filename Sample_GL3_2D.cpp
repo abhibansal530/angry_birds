@@ -209,8 +209,8 @@ bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0;
 typedef struct ball{
-	float sx,sy,x,y,velx,vely,lu,st;
-	float r;
+	float sx,sy,x,y,vel,velx,vely,lu,st;
+	float r,k;
 	bool isshoot;
 	VAO *circle;
 	GLfloat vbd[7000];
@@ -220,6 +220,8 @@ typedef struct ball{
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
+		vel = 500;
+		k=1;
 		int v=0,k=0,j=0;
 		float i;
 		for(i =0.5;i<=360;i+=0.5){
@@ -262,7 +264,7 @@ typedef struct ball{
 	void shoot(){
 		float ang = -1.f*pipe_rot*M_PI/180.f;
 		ang = 0.5*M_PI - ang;
-		float vel = 500;
+		//float vel = 500;
 		st = glfwGetTime();
 		lu=glfwGetTime();
 		isshoot=true;
@@ -393,7 +395,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 	Matrices.projection = glm::ortho(-650.0f, 650.0f, -500.0f, 500.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle;
+VAO *triangle, *rectangle,*shape;
 VAO *box,*circle,*pipe,*spring;
 
 // Creates the triangle object used in this sample code
@@ -557,7 +559,24 @@ void createCircle(float r){
 	}
 	circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 }
-
+void createShape(){
+	static GLfloat vbd[7000];
+	static GLfloat cbd[7000];
+	float px=0,py=0,cx=0,cy=0,i,r=20.0;
+	int k=0,v=0,j=0;
+	for(i =1;i<=360;i+=1.0){
+		//printf("i:%f\n",i);
+		v++;
+		float tmp[]={r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-1.0)*M_PI/180.0f),r*sin((i-1.0)*M_PI/180.0f),0};
+		for(int j=0;j<6;++j)vbd[k++]=tmp[j];
+	}
+	for(int i=0;i<2*v;++i){
+			cbd[j++]=1;
+			cbd[j++]=0;
+			cbd[j++]=0;
+		}
+	shape = create3DObject(GL_POINTS,2*v,vbd,cbd,GL_FILL);
+}
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
@@ -659,14 +678,14 @@ void draw ()
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(ang,glfwGetTime(),s);
 	//printf("ang: %f\n",ang);
-	/*Matrices.model = glm::mat4(1.0f);
-	glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
-	Matrices.model*=translateBall;
+	Matrices.model = glm::mat4(1.0f);
+	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
+	//Matrices.model*=translateBall;
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
-	my.move(-1.8+2*sin(ang),-2+2*cos(ang));
-	printf("%f %f\n",my.x,my.y);
-	draw3DObject(my.circle);*/
+	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
+	//printf("%f %f\n",my.x,my.y);
+	draw3DObject(shape);
 	//camera_rotation_angle++; // Simulating camera rotation
 	// triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
 	// rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
@@ -734,6 +753,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	//createBox();
 	createPipe();
 	createSpring();
+	createShape();
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
@@ -788,9 +808,13 @@ int main (int argc, char** argv)
 			// do something every 0.5 seconds ..
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
 				s*=0.99;
+				my.vel*=my.k;
 				my.translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
 			}
-			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS)s/=0.99;
+			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS){
+				s/=0.99;
+				my.translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
+			}
 			last_update_time = current_time;
 		}
 	}
