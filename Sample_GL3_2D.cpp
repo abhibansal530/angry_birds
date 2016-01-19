@@ -261,7 +261,7 @@ typedef struct ball{
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
-		printf("x:%f y:%f\n",x,y);
+		//printf("x:%f y:%f\n",x,y);
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
@@ -339,15 +339,48 @@ typedef struct ground
 			//printf("collided x:%f y:%f \n",b.x,b.y);
 			b.collision=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			b.vel = b.velx*b.velx + b.vely*b.vely;
-			float ang = atan(-1*b.vely/b.velx);
-			b.shoot(ang);
+			b.vel = b.velx*b.velx + b.vely*b.vely;  //vel is not working properly
+			//float ang = atan(-1*b.vely/b.velx);
+			b.shoot(M_PI/4.0f);  //angle is hard-coded for test
 		}
 	}
 
 }ground;
+typedef struct sky{
+	VAO *shape;
+	void create(){
+		GLfloat vbd[]={
+			-650,-100,0,
+			650,-100,0,
+			650,500,0,
+
+			650,500,0,
+			-650,-100,0,
+			-650,500,0
+		};
+		GLfloat cbd[]={
+			0,0,0.5,
+			0,0,0.5,
+			0,0,0.5,
+
+			0,0,0.5,
+			0,0,0.5,
+			0,0,0.5
+		};
+		shape = create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
+	}
+	void draw(){
+		glm::mat4 MVP;
+		glm::mat4 VP = Matrices.projection * Matrices.view;
+		Matrices.model = glm::mat4(1.0f);
+		MVP = VP*Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+		draw3DObject(shape);
+	}
+}sky;
 ball my;
 ground gameground;
+sky gamesky;
 float ang;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -690,6 +723,7 @@ void draw ()
 	// Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
 	// glPopMatrix ();
 	gameground.draw();
+	gamesky.draw();
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
 	
@@ -804,6 +838,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
 	gameground.create();
+	gamesky.create();
 	//createBox();
 	createPipe();
 	createSpring();
@@ -846,7 +881,7 @@ int main (int argc, char** argv)
 		// OpenGL Draw commands
 		draw();
 
-		printf("%d\n",my.collision);
+		//printf("%d\n",my.collision);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
