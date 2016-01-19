@@ -209,9 +209,10 @@ bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0;
 typedef struct ball{
+	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
-	float r,k;
-	bool isshoot;
+	float r,k,velx_in,vely_in;
+	bool isshoot,collision;
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
@@ -220,6 +221,8 @@ typedef struct ball{
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
+		collision=false;
+		sx=sy=0;
 		vel = 500;
 		k=1;
 		int v=0,k=0,j=0;
@@ -258,28 +261,34 @@ typedef struct ball{
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
-		//printf("%f %f\n",x,y);
+		printf("x:%f y:%f\n",x,y);
 		draw3DObject(circle);	
 	}
-	void shoot(){
-		float ang = -1.f*pipe_rot*M_PI/180.f;
-		ang = 0.5*M_PI - ang;
+	void shoot(float ang){
+		if(!collision){
+			stx =x,sty=y;
+		}
+		//float ang = -1.f*pipe_rot*M_PI/180.f;
+		//ang = 0.5*M_PI - ang;
 		//float vel = 500;
+		//printf("shooted\n");
 		st = glfwGetTime();
 		lu=glfwGetTime();
 		isshoot=true;
-		sx=x,sy=y;
-		velx=vel*cos(ang),vely=vel*sin(ang);
+		//sx=x,sy=y;
+		velx=velx_in=vel*cos(ang),vely=vely_in=vel*sin(ang);
 	}
-	void fire(float ang,float ti,float s){
+	void fire(float s){
 		float nx,ny;
 		float ct;
 		ti = glfwGetTime();
 		if(ti-lu>=10e-10){
 			ti-=st;
-			nx = velx*ti;
-			ny=vely*ti-100*ti*ti;
+			//printf("sx: %f sy: %f\n",sx,sy);
+			nx = sx+velx_in*ti;
+			ny=sy+vely_in*ti-100*ti*ti;
 			lu=glfwGetTime();
+			vely = vely_in - 100*ti;
 		}
 		//ti+=0.1;
 		project = glm::translate(glm::vec3(nx,ny,0));
@@ -293,7 +302,53 @@ typedef struct ball{
 		x=nx,y=ny;
 	}
 } ball;
+typedef struct ground
+{
+	VAO *shape;
+	void create(){
+		GLfloat vbd[]={
+			-650,-500,0,
+			650,-500,0,
+			650,-100,0,
+
+			650,-100,0,
+			-650,-500,0,
+			-650,-100,0
+		};
+		GLfloat cbd[]={
+			0.94,0.67,0.4,
+			0.94,0.67,0.4,
+			0.94,0.67,0.4,
+
+			0.94,0.67,0.4,
+			0.94,0.67,0.4,
+			0.94,0.67,0.4
+		};
+		shape = create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
+	}
+	void draw(){
+		glm::mat4 MVP;
+		glm::mat4 VP = Matrices.projection * Matrices.view;
+		Matrices.model = glm::mat4(1.0f);
+		MVP = VP*Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+		draw3DObject(shape);
+	}
+	void checkCollision(ball &b){
+		if(b.isshoot&&b.vely<0&&!b.collision){
+			//printf("collided x:%f y:%f \n",b.x,b.y);
+			b.collision=true;
+			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
+			b.vel = b.velx*b.velx + b.vely*b.vely;
+			float ang = atan(-1*b.vely/b.velx);
+			b.shoot(ang);
+		}
+	}
+
+}ground;
 ball my;
+ground gameground;
+float ang;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -312,7 +367,9 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				// do something ..
 				break;
 			case GLFW_KEY_SPACE:
-				my.shoot();
+				ang = -1.f*pipe_rot*M_PI/180.f;
+				ang = 0.5*M_PI - ang;
+				my.shoot(ang);
 				break;
 			default:
 				break;
@@ -632,16 +689,10 @@ void draw ()
 
 	// Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
 	// glPopMatrix ();
-	Matrices.model = glm::mat4(1.0f);
-
-	glm::mat4 translateRectangle = glm::translate (glm::vec3(-2, -3, 0));        // glTranslatef
-	//glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-	Matrices.model *= (translateRectangle);
-	MVP = VP * Matrices.model;
-	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	gameground.draw();
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
-	draw3DObject(rectangle);
+	
 	
 	Matrices.model = glm::mat4(1.0f);
 	glm::mat4 translateCircle = glm::translate (glm::vec3(-3.5*100,-3*100,0));
@@ -674,9 +725,10 @@ void draw ()
 	//  float increments = 1;
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
+	gameground.checkCollision(my);
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
-	else my.fire(ang,glfwGetTime(),s);
+	else my.fire(s);
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
 	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -686,6 +738,7 @@ void draw ()
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	draw3DObject(shape);
+	
 	//camera_rotation_angle++; // Simulating camera rotation
 	// triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
 	// rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
@@ -750,6 +803,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	createRectangle();
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
+	gameground.create();
 	//createBox();
 	createPipe();
 	createSpring();
@@ -792,6 +846,7 @@ int main (int argc, char** argv)
 		// OpenGL Draw commands
 		draw();
 
+		printf("%d\n",my.collision);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
