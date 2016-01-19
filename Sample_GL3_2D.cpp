@@ -261,7 +261,7 @@ typedef struct ball{
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
-		//printf("x:%f y:%f\n",x,y);
+		printf("x:%f y:%f\n",x,y);
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
@@ -359,13 +359,13 @@ typedef struct sky{
 			-650,500,0
 		};
 		GLfloat cbd[]={
-			0,0,0.5,
-			0,0,0.5,
-			0,0,0.5,
+			0,0,0.1,
+			0,0,0.1,
+			0,0,0.1,
 
-			0,0,0.5,
-			0,0,0.5,
-			0,0,0.5
+			0,0,0.1,
+			0,0,0.1,
+			0,0,0.1
 		};
 		shape = create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
 	}
@@ -378,9 +378,52 @@ typedef struct sky{
 		draw3DObject(shape);
 	}
 }sky;
+typedef struct obstacle
+{	VAO* shape;
+	void create(){
+		GLfloat vbd[]={
+			-50,-50,0,
+			50,-50,0,
+			50,50,0,
+
+			50,50,0,
+			-50,-50,0,
+			-50,50,0
+		};
+		GLfloat cbd[]={
+			1,0,0,
+			1,0,0,
+			1,0,0,
+
+			1,0,0,
+			1,0,0,
+			1,0,0
+		};
+		shape = create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
+	}
+	void draw(){
+		glm::mat4 MVP;
+		glm::mat4 VP = Matrices.projection * Matrices.view;
+		Matrices.model = glm::mat4(1.0f);
+		MVP = VP*Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+		draw3DObject(shape);
+	}
+	void checkCollision(ball &b){
+		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision){
+			printf("collided x:%f y:%f \n",b.x,b.y);
+			b.collision=true;
+			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
+			float ang = M_PI/2.0 + atan(b.velx/b.vely);
+			b.shoot(ang);
+		}
+	}
+	
+}obstacle;
 ball my;
 ground gameground;
 sky gamesky;
+obstacle test;
 float ang;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -724,6 +767,7 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
+	test.draw();
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
 	
@@ -760,9 +804,11 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
+	
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
+	test.checkCollision(my);
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
 	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -839,6 +885,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
+	test.create();
 	//createBox();
 	createPipe();
 	createSpring();
