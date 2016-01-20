@@ -394,15 +394,17 @@ typedef struct sky{
 }sky;
 typedef struct obstacle
 {	VAO* shape;
-	void create(){
+	float w,h;
+	void create(int wi,int he){
+		w=wi,h=he;
 		GLfloat vbd[]={
-			-50,-50,0,
-			50,-50,0,
-			50,50,0,
+			-w/2.0,-h/2.0,0,
+			w/2.0,-h/2.0,0,
+			w/2.0,h/2.0,0,
 
-			50,50,0,
-			-50,-50,0,
-			-50,50,0
+			w/2.0,h/2.0,0,
+			-w/2.0,-h/2.0,0,
+			-w/2.0,h/2.0,0
 		};
 		GLfloat cbd[]={
 			1,0,0,
@@ -909,7 +911,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create();
+	test.create(100.0,100.0);
 	//createBox();
 	createPipe();
 	createSpring();
