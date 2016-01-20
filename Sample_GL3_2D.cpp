@@ -295,10 +295,15 @@ typedef struct ball{
 		if(ti-lu>=10e-10){
 			ti-=st;
 			//printf("sx: %f sy: %f\n",sx,sy);
+			if(abs(velx-0.0)<=(float)10e-10&&velx<0){    //ball came to rest
+				printf("at rest\n");
+				return;
+			}
 			nx = sx+velx_in*ti;
 			ny=sy+vely_in*ti-100*ti*ti;
 			lu=glfwGetTime();
 			vely = vely_in - 200*ti;
+			vel = sqrt(velx*velx +vely*vely);
 			if(vely<=0)falling=true;
 			else falling = false;
 			printf("velx:%f vely:%f\n",velx,vely);
