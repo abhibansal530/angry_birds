@@ -212,7 +212,7 @@ typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
 	float r,k,velx_in,vely_in;
-	bool isshoot,collision_obj,collision_ground;
+	bool isshoot,collision_obj,collision_ground,falling;
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
@@ -221,7 +221,7 @@ typedef struct ball{
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
-		collision_ground=collision_obj=false;
+		collision_ground=collision_obj=falling=false;
 		sx=sy=0;
 		vel = 500;
 		k=1;
@@ -241,6 +241,7 @@ typedef struct ball{
 		return;	
 	}
 	bool onground(){
+		//printf("y: %f is:%d\n",y,isshoot);
 		return y<=-300&&isshoot;
 	}
 	void draw(float nx,float ny,float s){
@@ -285,6 +286,7 @@ typedef struct ball{
 		isshoot=true;
 		//sx=x,sy=y;
 		velx=velx_in=vel*cos(ang),vely=vely_in=vel*sin(ang);
+		//printf("in shoot velx:%f vely:%f\n",velx,vely);
 	}
 	void fire(float s){
 		float nx,ny;
@@ -296,7 +298,10 @@ typedef struct ball{
 			nx = sx+velx_in*ti;
 			ny=sy+vely_in*ti-100*ti*ti;
 			lu=glfwGetTime();
-			vely = vely_in - 100*ti;
+			vely = vely_in - 200*ti;
+			if(vely<=0)falling=true;
+			else falling = false;
+			printf("velx:%f vely:%f\n",velx,vely);
 		}
 		//ti+=0.1;
 		project = glm::translate(glm::vec3(nx,ny,0));
@@ -344,9 +349,9 @@ typedef struct ground
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		if(b.isshoot&&b.vely<0&&!b.collision_ground){
-			//printf("collided x:%f y:%f \n",b.x,b.y);
-			b.collision_ground=true;
+		if(b.onground()&&b.falling&&!b.collision_ground){
+			printf("collided ground x:%f y:%f \n",b.x,b.y);
+			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 			//b.vel = b.velx*b.velx + b.vely*b.vely;  //vel is not working properly
 			float ang = atan(-1*b.vely/b.velx);
@@ -419,13 +424,20 @@ typedef struct obstacle
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision_obj){
+		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision_obj&&b.isshoot){
 			float ang;
-			printf("collided x:%f y:%f \n",b.x,b.y);
+			printf("obscollided x:%f y:%f \n",b.x,b.y);
 			b.collision_obj=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			if(b.x<=-50)ang = M_PI/2.0 + atan(b.velx/b.vely);
-			else ang = -1.0*atan(b.vely/b.velx);
+			if(b.x<=-50){
+				printf("left velx:%f vely:%f\n",b.velx,b.vely);
+				ang = M_PI/2.0 + atan(b.velx/b.vely);
+			}
+			else {
+				printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
+				//ang = M_PI/2.0-1.0*atan(b.vely/b.velx);
+				ang = -1.0*M_PI/4.0;
+			}
 			b.shoot(ang);
 		}
 	}
@@ -815,11 +827,11 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	
+	test.checkCollision(my);
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
-	test.checkCollision(my);
+	
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
 	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -939,7 +951,7 @@ int main (int argc, char** argv)
 		// OpenGL Draw commands
 		draw();
 
-		//printf("%d\n",my.collision);
+		printf("fall %d\n",my.falling);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
@@ -951,7 +963,6 @@ int main (int argc, char** argv)
 
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
-	//	printf("%lf\n", current_time);
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
