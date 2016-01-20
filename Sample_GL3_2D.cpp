@@ -224,7 +224,7 @@ typedef struct ball{
 		collision_ground=collision_obj=falling=false;
 		sx=sy=0;
 		vel = 500;
-		k=1;
+		k=1+0.01/2.0;  //change k acc. to spring length
 		int v=0,k=0,j=0;
 		float i;
 		for(i =0.5;i<=360;i+=0.5){
