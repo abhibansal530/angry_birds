@@ -207,7 +207,7 @@ float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1,pipe_rot=-52.0;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
-float tx,ty,ti=0;
+float tx,ty,ti=0,MAXHEIGHT=500;
 typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
@@ -277,6 +277,7 @@ typedef struct ball{
 		if(!collision_ground&&!collision_obj){
 			stx =x,sty=y;
 		}
+		float maxh;
 		//float ang = -1.f*pipe_rot*M_PI/180.f;
 		//ang = 0.5*M_PI - ang;
 		//float vel = 500;
@@ -285,6 +286,11 @@ typedef struct ball{
 		lu=glfwGetTime();
 		isshoot=true;
 		//sx=x,sy=y;
+		MAXHEIGHT+=abs(sty);
+		maxh = (vel*sin(ang))*(vel*sin(ang))/400.f;
+		if(maxh>=MAXHEIGHT){                         //handles going above the window
+			vel = sqrt(400.f*MAXHEIGHT)/sin(ang);
+		}
 		velx=velx_in=vel*cos(ang),vely=vely_in=vel*sin(ang);
 		//printf("in shoot velx:%f vely:%f\n",velx,vely);
 	}
