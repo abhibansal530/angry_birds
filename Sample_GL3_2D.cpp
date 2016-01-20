@@ -353,9 +353,9 @@ typedef struct ground
 			printf("collided ground x:%f y:%f \n",b.x,b.y);
 			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			//b.vel = b.velx*b.velx + b.vely*b.vely;  //vel is not working properly
+			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;  //alpha of collision = 1/600
 			float ang = atan(-1*b.vely/b.velx);
-			b.shoot(M_PI/3.0f);  //angle is hard-coded for test
+			b.shoot(ang);  //angle is hard-coded for test
 		}
 	}
 
