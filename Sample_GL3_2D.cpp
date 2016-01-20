@@ -435,9 +435,10 @@ typedef struct obstacle
 			}
 			else {
 				printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
-				//ang = M_PI/2.0-1.0*atan(b.vely/b.velx);
-				ang = -1.0*M_PI/4.0;
+				ang = -1.0*atan(b.vely/b.velx);
+				//ang = -1.0*M_PI/4.0;
 			}
+			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;
 			b.shoot(ang);
 		}
 	}
