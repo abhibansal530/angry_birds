@@ -212,6 +212,7 @@ typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
 	float r,k,velx_in,vely_in;
+	float rang,rs;
 	bool isshoot,collision_obj,collision_ground,falling;
 	VAO *circle;
 	GLfloat vbd[7000];
@@ -248,8 +249,12 @@ typedef struct ball{
 		glm::mat4 MVP;
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
-		glm::mat4 translateBall = translate*glm::translate(glm::vec3(nx,ny*s,0));
-		glm::mat4 rotateBall = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
+		if(!isshoot){
+			rang = pipe_rot*M_PI/180.0f;
+			rs=s;
+		}
+		glm::mat4 translateBall = translate*glm::translate(glm::vec3(nx,ny*rs,0));
+		glm::mat4 rotateBall = glm::rotate((float)(rang),glm::vec3(0,0,1));
 		glm::mat4 translateBallagain = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
 		Matrices.model*=(project*translateBallagain*rotateBall*translateBall);
 		float *mv = (&Matrices.model[0][0]);
@@ -549,8 +554,14 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
 	switch (button) {
 		case GLFW_MOUSE_BUTTON_LEFT:
-			if (action == GLFW_RELEASE)
-				triangle_rot_dir *= -1;
+			if (action == GLFW_RELEASE){
+				double xp,yp;
+				glfwGetCursorPos(window,&xp,&yp);
+				yp = 500.f-yp;
+				xp=xp-650.f;
+				printf("xp:%lf yp:%lf\n",xp,yp);
+				pipe_rot = atan(yp/xp);
+			}
 			break;
 		case GLFW_MOUSE_BUTTON_RIGHT:
 			if (action == GLFW_RELEASE) {
@@ -994,8 +1005,8 @@ int main (int argc, char** argv)
 
 		// OpenGL Draw commands
 		draw();
-
-		printf("check %d\n",checkCollision(my,test));
+		
+		//printf("%lf %lf \n",xp,yp);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
@@ -1011,12 +1022,12 @@ int main (int argc, char** argv)
 			// do something every 0.5 seconds ..
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
 				s*=0.99;
-				my.vel*=my.k;
-				my.translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
+				if(!my.isshoot)my.vel*=my.k;
+				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
 			}
 			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS){
 				s/=0.99;
-				my.translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
+				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
 			}
 			last_update_time = current_time;
 		}
