@@ -394,9 +394,12 @@ typedef struct sky{
 }sky;
 typedef struct obstacle
 {	VAO* shape;
-	float w,h;
+	float w,h;   //width and height
+	float x,y,r; 
 	void create(int wi,int he){
+		x=y=0;
 		w=wi,h=he;
+		r = sqrt((w/2.0)*(w/2.0) + (h/2.0)*(h/2.0));
 		GLfloat vbd[]={
 			-w/2.0,-h/2.0,0,
 			w/2.0,-h/2.0,0,
@@ -446,11 +449,31 @@ typedef struct obstacle
 	}
 	
 }obstacle;
+bool checkCollision(ball b,obstacle o){
+	float d = sqrt((b.x-o.x)*(b.x-o.x) + (b.y-o.y)*(b.y-o.y));
+	return d<=b.r+o.r;
+}
+void handleCollision(ball &b,obstacle &o){
+//	if(b.collision_obj)return;
+	float phi,theta,alpha;  //phi = angle with x-axis line joining both centres and theta = angle of velocity vector of ball
+	float vn,vt,a = 1.0;
+	theta = b.vely/b.velx;
+	phi = (o.y-b.y)/(o.x-b.x);
+	alpha = theta - phi;
+	vn = b.vel*cos(alpha),vt=b.vel*sin(alpha);
+	float beta = (vt*cos(phi)-a*vn*sin(phi))/(vt*sin(phi)+a*vn*cos(phi));
+	beta = atan(beta);
+	b.vel = sqrt(vt*vt + a*a*vn*vn);
+	b.collision_obj = true;
+	b.sx=b.x-b.stx,b.sy=b.y-b.sty;
+	b.shoot(M_PI-beta);
+}
 ball my;
 ground gameground;
 sky gamesky;
 obstacle test;
 float ang;
+float add = 0;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -466,6 +489,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				triangle_rot_status = !triangle_rot_status;
 				break;
 			case GLFW_KEY_X:
+				add+=00.0f;
+				break;
 				// do something ..
 				break;
 			case GLFW_KEY_SPACE:
@@ -539,7 +564,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 	GLfloat fov = 90.0f;
 
 	// sets the viewport of openGL renderer
-	glViewport (0, 0, (GLsizei) fbwidth, (GLsizei) fbheight);
+	glViewport (0, 0, (GLsizei) fbwidth+add, (GLsizei) fbheight + add);
 
 	// set the projection matrix as perspective
 	/* glMatrixMode (GL_PROJECTION);
@@ -830,7 +855,8 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	test.checkCollision(my);
+	//test.checkCollision(my);
+	
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
@@ -844,6 +870,10 @@ void draw ()
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	draw3DObject(shape);
+	if(checkCollision(my,test)){
+		//printf("done\n");
+		handleCollision(my,test);
+	}
 	
 	//camera_rotation_angle++; // Simulating camera rotation
 	// triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
@@ -954,7 +984,7 @@ int main (int argc, char** argv)
 		// OpenGL Draw commands
 		draw();
 
-		printf("fall %d\n",my.falling);
+		printf("check %d\n",checkCollision(my,test));
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
