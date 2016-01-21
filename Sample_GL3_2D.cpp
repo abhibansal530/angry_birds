@@ -547,6 +547,7 @@ obstacle test;
 power testpow;
 float ang;
 float add = 0;
+float PANX = 0;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -831,14 +832,14 @@ void draw ()
 	// Eye - Location of camera. Don't change unless you are sure!!
 	glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
 	// Target - Where is the camera looking at.  Don't change unless you are sure!!
-	glm::vec3 target (0, 0, 0);
+	glm::vec3 target (0+PANX, 0, 0);
 	// Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
 	glm::vec3 up (0, 1, 0);
 
 	// Compute Camera matrix (view)
 	// Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
 	//  Don't change unless you are sure!!
-	Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+	Matrices.view = glm::lookAt(glm::vec3(0+PANX,0,3), target, glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
 	// Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
 	//  Don't change unless you are sure!!
@@ -994,7 +995,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create(100.0,50.0,color(1,0,0));
+	test.create(300.0,50.0,color(1,0,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
@@ -1052,6 +1053,12 @@ int main (int argc, char** argv)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
+			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
+				PANX-=10.0;
+			}
+			if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS){
+				PANX+=10.0;
+			}
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
 				s*=0.99;
 				if(!my.isshoot)my.vel*=my.k;
