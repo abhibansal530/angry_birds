@@ -275,7 +275,7 @@ typedef struct ball{
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
-		printf("x:%f y:%f\n",x,y);
+//		printf("x:%f y:%f\n",x,y);
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
@@ -560,7 +560,8 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 				yp = 500.f-yp;
 				xp=xp-650.f;
 				printf("xp:%lf yp:%lf\n",xp,yp);
-				pipe_rot = atan(yp/xp);
+				pipe_rot = atan(yp/xp)*180.f/M_PI;
+				printf("pipe_rot:%f\n",pipe_rot);
 			}
 			break;
 		case GLFW_MOUSE_BUTTON_RIGHT:
