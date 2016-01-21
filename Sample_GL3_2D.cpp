@@ -213,7 +213,7 @@ typedef struct ball{
 	float sx,sy,x,y,vel,velx,vely,lu,st;
 	float r,k,velx_in,vely_in;
 	float rang,rs;
-	bool isshoot,collision_obj,collision_ground,falling;
+	bool isshoot,collision_obj,collision_ground,falling,power;
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
@@ -222,7 +222,7 @@ typedef struct ball{
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
-		collision_ground=collision_obj=falling=false;
+		collision_ground=collision_obj=falling=power=false;
 		sx=sy=0;
 		vel = 500;
 		k=1+0.01/2.0;  //change k acc. to spring length
@@ -332,6 +332,51 @@ typedef struct ball{
 		x=nx,y=ny;
 	}
 } ball;
+typedef struct power{       //singleton,only one instance needed
+	float x,y,r;
+	float inx,iny,inti;  //parameters to be set when ball clicked
+	VAO *circle;
+	GLfloat vbd[7000];
+	GLfloat cbd[7000];
+	glm::mat4 translate;
+	void create(float ra){
+		r = ra;
+		int v=0,k=0,j=0;
+		float i;
+		for(i =0.5;i<=360;i+=0.5){
+			v++;
+			float tmp[]={0,0,0,r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-0.5)*M_PI/180.0f),r*sin((i-0.5)*M_PI/180.0f),0};
+			for(int j=0;j<9;++j)vbd[k++]=tmp[j];
+		}
+		for(int i=0;i<3*v;++i){
+			cbd[j++]=1;
+			cbd[j++]=1;
+			cbd[j++]=1;
+		}
+		circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
+		return;	
+	}
+	void draw(){
+		float ti = glfwGetTime()-inti;
+		glm::mat4 MVP;
+		glm::mat4 VP = Matrices.projection * Matrices.view;
+		Matrices.model = glm::mat4(1.0f);
+		translate = glm::translate(glm::vec3(inx,iny-100.0*ti*ti,0));
+		Matrices.model*=translate;
+		float *mv = (&Matrices.model[0][0]);
+		x =  mv[12];
+		y =  mv[13];
+		float z =  mv[14];
+		float wp =  mv[15];
+
+		x /= wp;
+		y /= wp;
+		z /= wp;
+		MVP = VP*Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+		draw3DObject(circle);	
+	}
+}power;
 typedef struct ground
 {
 	VAO *shape;
@@ -488,6 +533,7 @@ ball my;
 ground gameground;
 sky gamesky;
 obstacle test;
+power testpow;
 float ang;
 float add = 0;
 /* Executed when a regular key is pressed/released/held-down */
@@ -505,7 +551,10 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				triangle_rot_status = !triangle_rot_status;
 				break;
 			case GLFW_KEY_X:
-				add+=00.0f;
+				my.power=true;
+				testpow.inx = my.x;
+				testpow.iny = my.y;
+				testpow.inti=glfwGetTime();
 				break;
 				// do something ..
 				break;
@@ -842,6 +891,7 @@ void draw ()
 	gameground.draw();
 	gamesky.draw();
 	test.draw();
+	
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
 	
@@ -883,7 +933,7 @@ void draw ()
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
-	
+	if(my.power)testpow.draw();
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
 	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -965,6 +1015,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	gameground.create();
 	gamesky.create();
 	test.create(100.0,100.0);
+	testpow.create(10.0);
 	//createBox();
 	createPipe();
 	createSpring();
