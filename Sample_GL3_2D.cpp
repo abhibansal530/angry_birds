@@ -208,6 +208,28 @@ float rectangle_rot_dir = 1,pipe_rot=-52.0;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0,MAXHEIGHT=500;
+typedef struct color{
+	float r,g,b;
+	color(float r,float g,float b):
+	r(r),g(g),b(b) {}
+}color;
+VAO* createCircle(float r,color c){
+	static GLfloat vbd[7000];
+	static GLfloat cbd[7000];
+	float px=0,py=0,cx=0,cy=0,i;
+	int k=0,v=0,j=0;
+	for(i =1;i<=360;i+=1.0){
+		v++;
+		float tmp[]={0,0,0,r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-1.0)*M_PI/180.0f),r*sin((i-1.0)*M_PI/180.0f),0};
+		for(int j=0;j<9;++j)vbd[k++]=tmp[j];
+	}
+	for(int i=0;i<3*v;++i){
+		cbd[j++]=c.r;
+		cbd[j++]=c.g;
+		cbd[j++]=c.b;
+	}
+	return create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
+}
 typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
@@ -238,7 +260,8 @@ typedef struct ball{
 			cbd[j++]=0;
 			cbd[j++]=1;
 		}
-		circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
+		circle = createCircle(r,color(0,0,1));
+		//circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 		return;	
 	}
 	bool onground(){
@@ -485,6 +508,17 @@ typedef struct obstacle
 		glm::mat4 MVP;
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
+		glm::mat4 translate = glm::translate(glm::vec3(500,-300,0));
+		Matrices.model*=translate;
+		float *mv = (&Matrices.model[0][0]);
+		x =  mv[12];
+		y =  mv[13];
+		float z =  mv[14];
+		float wp =  mv[15];
+
+		x /= wp;
+		y /= wp;
+		z /= wp;
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		draw3DObject(shape);
@@ -784,37 +818,6 @@ static const GLfloat vertex_buffer_data [] ={
 	};
 	spring = create3DObject(GL_TRIANGLES,12,vertex_buffer_data,color_buffer_data,GL_FILL);	
 }
-void createCircle(float r){
-	static GLfloat vbd[7000];
-	static GLfloat cbd[7000];
-	float px=0,py=0,cx=0,cy=0,i;
-	int k=0,v=0,j=0;
-	for(i =1;i<=360;i+=1.0){
-		//printf("i:%f\n",i);
-		v++;
-		float tmp[]={0,0,0,r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-1.0)*M_PI/180.0f),r*sin((i-1.0)*M_PI/180.0f),0};
-		for(int j=0;j<9;++j)vbd[k++]=tmp[j];
-	}
-	/*for(i=r;i>=0;i-=0.01){
-		v++;
-		cx=i;
-		cy=-1.0*sqrt(r*r-i*i);
-		if(cy==-0)cy=0;
-		printf("cx: %f cy: %f\n",cx,cy);
-		float tmp[]={cx,cy,0,px,py,0,0,0,0};
-		for(int j=0;j<9;++j)vbd[k++]=tmp[j];
-		px=cx,py=cy;
-	}*/
-	//float tmp[]={r,0,0,px,py,0,0,0,0};
-	//for(int i=0;i<9;++i)vbd[k++]=tmp[i];
-	//v++;
-	for(int i=0;i<3*v;++i){
-		cbd[j++]=1;
-		cbd[j++]=0;
-		cbd[j++]=0;
-	}
-	circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
-}
 void createShape(){
 	static GLfloat vbd[7000];
 	static GLfloat cbd[7000];
@@ -1008,13 +1011,13 @@ void initGL (GLFWwindow* window, int width, int height)
 	/* Objects should be created before any other gl function and shaders */
 	// Create the models
 	//	createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
-	createCircle(0.5*100);
+	circle = createCircle(0.5*100,color(1,0,0));
 	createRectangle();
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create(100.0,100.0);
+	test.create(100.0,50.0);
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
