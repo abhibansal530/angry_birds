@@ -230,6 +230,26 @@ VAO* createCircle(float r,color c){
 	}
 	return create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 }
+VAO* createRectangle(int w,int h,color c){
+	GLfloat vbd[]={
+		-w/2.0,-h/2.0,0,
+		w/2.0,-h/2.0,0,
+		w/2.0,h/2.0,0,
+
+		w/2.0,h/2.0,0,
+		-w/2.0,-h/2.0,0,
+		-w/2.0,h/2.0,0
+	};
+	GLfloat cbd[]={
+		c.r,c.g,c.b,
+		c.r,c.g,c.b,
+		c.r,c.g,c.b,
+
+		c.r,c.g,c.b,
+		c.r,c.g,c.b,
+		c.r,c.g,c.b	};
+	return create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
+}
 typedef struct ball{
 	float stx,sty;
 	float sx,sy,x,y,vel,velx,vely,lu,st;
@@ -248,20 +268,7 @@ typedef struct ball{
 		sx=sy=0;
 		vel = 500;
 		k=1+0.01/2.0;  //change k acc. to spring length
-		int v=0,k=0,j=0;
-		float i;
-		for(i =0.5;i<=360;i+=0.5){
-			v++;
-			float tmp[]={0,0,0,r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-0.5)*M_PI/180.0f),r*sin((i-0.5)*M_PI/180.0f),0};
-			for(int j=0;j<9;++j)vbd[k++]=tmp[j];
-		}
-		for(int i=0;i<3*v;++i){
-			cbd[j++]=0;
-			cbd[j++]=0;
-			cbd[j++]=1;
-		}
 		circle = createCircle(r,color(0,0,1));
-		//circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 		return;	
 	}
 	bool onground(){
@@ -364,19 +371,7 @@ typedef struct power{       //singleton,only one instance needed
 	glm::mat4 translate;
 	void create(float ra){
 		r = ra;
-		int v=0,k=0,j=0;
-		float i;
-		for(i =0.5;i<=360;i+=0.5){
-			v++;
-			float tmp[]={0,0,0,r*cos(i*M_PI/180.0f),r*sin(i*M_PI/180.0f),0,r*cos((i-0.5)*M_PI/180.0f),r*sin((i-0.5)*M_PI/180.0f),0};
-			for(int j=0;j<9;++j)vbd[k++]=tmp[j];
-		}
-		for(int i=0;i<3*v;++i){
-			cbd[j++]=1;
-			cbd[j++]=1;
-			cbd[j++]=1;
-		}
-		circle = create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
+		circle = createCircle(r,color(1,1,1));
 		return;	
 	}
 	void draw(){
@@ -480,29 +475,11 @@ typedef struct obstacle
 {	VAO* shape;
 	float w,h;   //width and height
 	float x,y,r; 
-	void create(int wi,int he){
+	void create(int wi,int he,color c){
 		x=y=0;
 		w=wi,h=he;
 		r = sqrt((w/2.0)*(w/2.0) + (h/2.0)*(h/2.0));
-		GLfloat vbd[]={
-			-w/2.0,-h/2.0,0,
-			w/2.0,-h/2.0,0,
-			w/2.0,h/2.0,0,
-
-			w/2.0,h/2.0,0,
-			-w/2.0,-h/2.0,0,
-			-w/2.0,h/2.0,0
-		};
-		GLfloat cbd[]={
-			1,0,0,
-			1,0,0,
-			1,0,0,
-
-			1,0,0,
-			1,0,0,
-			1,0,0
-		};
-		shape = create3DObject(GL_TRIANGLES,6,vbd,cbd,GL_FILL);
+		shape = createRectangle(w,h,c);
 	}
 	void draw(){
 		glm::mat4 MVP;
@@ -711,32 +688,32 @@ void createTriangle ()
 }
 
 // Creates the rectangle object used in this sample code
-void createRectangle ()
-{
-	// GL3 accepts only Triangles. Quads are not supported
-	static const GLfloat vertex_buffer_data [] = {
-		-2,-1,0, // vertex 1
-		2,-1,0, // vertex 2
-		2, 1,0, // vertex 3
+// void createRectangle ()
+// {
+// 	// GL3 accepts only Triangles. Quads are not supported
+// 	static const GLfloat vertex_buffer_data [] = {
+// 		-2,-1,0, // vertex 1
+// 		2,-1,0, // vertex 2
+// 		2, 1,0, // vertex 3
 
-		2, 1,0, // vertex 3
-		-2, 1,0, // vertex 4
-		-2,-1,0  // vertex 1
-	};
+// 		2, 1,0, // vertex 3
+// 		-2, 1,0, // vertex 4
+// 		-2,-1,0  // vertex 1
+// 	};
 
-	static const GLfloat color_buffer_data [] = {
-		0.647059,0.164706,0.164706, // color 1
-		0.647059,0.164706,0.164706, // color 2
-		0.647059,0.164706,0.164706, // color 3
+// 	static const GLfloat color_buffer_data [] = {
+// 		0.647059,0.164706,0.164706, // color 1
+// 		0.647059,0.164706,0.164706, // color 2
+// 		0.647059,0.164706,0.164706, // color 3
 
-		0.647059,0.164706,0.164706, // color 3
-		0.647059,0.164706,0.164706, // color 4
-		0.647059,0.164706,0.164706  // color 1
-	};
+// 		0.647059,0.164706,0.164706, // color 3
+// 		0.647059,0.164706,0.164706, // color 4
+// 		0.647059,0.164706,0.164706  // color 1
+// 	};
 
-	// create3DObject creates and returns a handle to a VAO that can be used later
-	rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
-}
+// 	// create3DObject creates and returns a handle to a VAO that can be used later
+// 	rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+// }
 
 void createBox()
 {
@@ -945,7 +922,7 @@ void draw ()
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
-	draw3DObject(shape);
+	//draw3DObject(shape);
 	if(checkCollision(my,test)){
 		//printf("done\n");
 		handleCollision(my,test);
@@ -1012,17 +989,17 @@ void initGL (GLFWwindow* window, int width, int height)
 	// Create the models
 	//	createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
 	circle = createCircle(0.5*100,color(1,0,0));
-	createRectangle();
+	//createRectangle();
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create(100.0,50.0);
+	test.create(100.0,50.0,color(1,0,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
 	createSpring();
-	createShape();
+	//createShape();
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
