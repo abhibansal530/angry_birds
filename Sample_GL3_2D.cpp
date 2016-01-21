@@ -256,7 +256,7 @@ typedef struct ball{
 	float sx,sy,x,y,vel,velx,vely,lu,st;
 	float r,k,velx_in,vely_in;
 	float rang,rs;
-	bool isshoot,collision_obj,collision_ground,falling,power;
+	bool isshoot,collision_obj,collision_ground,falling,power,shootpower;
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
@@ -266,6 +266,7 @@ typedef struct ball{
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
 		collision_ground=collision_obj=falling=power=false;
+		shootpower=true;
 		sx=sy=0;
 		vel = 500;
 		k=1+0.01/2.0;  //change k acc. to spring length
@@ -567,10 +568,13 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				triangle_rot_status = !triangle_rot_status;
 				break;
 			case GLFW_KEY_X:
-				my.power=true;
-				testpow.inx = my.x;
-				testpow.iny = my.y;
-				testpow.inti=glfwGetTime();
+				if(my.shootpower){
+					my.power=true;
+					testpow.inx = my.x;
+					testpow.iny = my.y;
+					testpow.inti=glfwGetTime();
+					my.shootpower=false;
+				}
 				break;
 				// do something ..
 				break;
@@ -578,8 +582,9 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
 				if(!ballinsky){
-					my.vel=500.0;
-					my.shoot(ang);
+					my.vel=500.0;        //rather create a init function
+					my.shoot(ang);           
+					my.shootpower=true;  
 				}
 				break;
 			default:
