@@ -208,6 +208,7 @@ float rectangle_rot_dir = 1,pipe_rot=-52.0;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0,MAXHEIGHT=500;
+bool ballinsky=false;   //whether ball in sky
 typedef struct color{
 	float r,g,b;
 	color(float r,float g,float b):
@@ -280,6 +281,7 @@ typedef struct ball{
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
 		if(!isshoot){
+			project = glm::mat4(1.0f);
 			rang = pipe_rot*M_PI/180.0f;
 			rs=s;
 		}
@@ -319,7 +321,7 @@ typedef struct ball{
 		//printf("shooted\n");
 		st = glfwGetTime();
 		lu=glfwGetTime();
-		isshoot=true;
+		isshoot=ballinsky=true;
 		//sx=x,sy=y;
 		MAXHEIGHT+=abs(sty);
 		maxh = (vel*sin(ang))*(vel*sin(ang))/400.f;
@@ -338,6 +340,8 @@ typedef struct ball{
 			//printf("sx: %f sy: %f\n",sx,sy);
 			if(abs(velx-0.0)<=(float)10e-10&&velx<0){    //ball came to rest
 				printf("at rest\n");
+				isshoot=ballinsky=false;
+				sx=sy=0;
 				return;
 			}
 			nx = sx+velx_in*ti;
@@ -486,7 +490,7 @@ typedef struct obstacle
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
 		glm::mat4 translate = glm::translate(glm::vec3(500,-300,0));
-		Matrices.model*=translate;
+		//Matrices.model*=translate;
 		float *mv = (&Matrices.model[0][0]);
 		x =  mv[12];
 		y =  mv[13];
@@ -571,9 +575,12 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				// do something ..
 				break;
 			case GLFW_KEY_SPACE:
-				ang = -1.f*pipe_rot*M_PI/180.f;
+				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
-				my.shoot(ang);
+				if(!ballinsky){
+					my.vel=500.0;
+					my.shoot(ang);
+				}
 				break;
 			default:
 				break;
@@ -995,7 +1002,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create(300.0,50.0,color(1,0,0));
+	test.create(100.0,100.0,color(1,0,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
