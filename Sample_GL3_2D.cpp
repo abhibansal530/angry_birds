@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#define sq(x) ((x)*(x))
 using namespace std;
 
 struct VAO {
@@ -210,7 +210,9 @@ bool rectangle_rot_status = true;
 float tx,ty,ti=0,MAXHEIGHT=500;
 bool ballinsky=false;   //whether ball in sky
 float PANX = 0;
-bool MANPAN=true;
+bool MANPAN=true,firsttime=true;
+struct obstacle;
+obstacle *allobstacles;
 typedef struct color{
 	float r,g,b;
 	color(float r,float g,float b):
@@ -317,7 +319,8 @@ typedef struct ball{
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
-		if(!collision_ground&&!collision_obj){
+		if(firsttime){
+			firsttime=false;
 			stx =x,sty=y;
 		}
 		float maxh;
@@ -483,20 +486,32 @@ typedef struct sky{
 }sky;
 typedef struct obstacle
 {	VAO* shape;
+	glm::mat4 translate;
 	float w,h;   //width and height
 	float x,y,r; 
+	bool circle;     //whether circle
+	bool collision; 
 	void create(int wi,int he,color c){
+		collision=false;
+		translate=glm::mat4(1.0f);
 		x=y=0;
-		w=wi,h=he;
-		r = sqrt((w/2.0)*(w/2.0) + (h/2.0)*(h/2.0));
-		shape = createRectangle(w,h,c);
+		
+		if(!circle){
+			w=wi,h=he;
+			//r = sqrt((w/2.0)*(w/2.0) + (h/2.0)*(h/2.0));
+			shape = createRectangle(w,h,c);
+		}
+		else{
+			r=wi;
+			shape = createCircle(r,c);
+		}
 	}
 	void draw(){
 		glm::mat4 MVP;
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
-		glm::mat4 translate = glm::translate(glm::vec3(500,-300,0));
-		//Matrices.model*=translate;
+		 //= glm::translate(glm::vec3(500,-300,0));
+		Matrices.model*=translate;
 		float *mv = (&Matrices.model[0][0]);
 		x =  mv[12];
 		y =  mv[13];
@@ -510,13 +525,20 @@ typedef struct obstacle
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		draw3DObject(shape);
 	}
+	
 	void checkCollision(ball &b){
-		if(b.x>=-50-15&&b.x<=50+15&&b.y>=-50-15&&b.y<=50+15&&!b.collision_obj&&b.isshoot){
+		if(b.x>=x-w/2.0-b.r&&b.x<=x+w/2.0+b.r&&b.y>=y-h/2.0-b.r&&b.y<=y+h/2.0+b.r&&!collision&&b.isshoot){
 			float ang;
 			printf("obscollided x:%f y:%f \n",b.x,b.y);
-			b.collision_obj=true;
+			collision=true;
+			for(int i=0;i<2;++i){
+				if(allobstacles[i].x!=x&&allobstacles[i].y!=y){
+					allobstacles[i].collision=false;
+					printf("entered %f %f\n",x,y);
+				}
+			}
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			if(b.x<=-50){
+			if(b.x<=x-w/2.0){
 				printf("left velx:%f vely:%f\n",b.velx,b.vely);
 				ang = M_PI/2.0 + atan(b.velx/b.vely);
 			}
@@ -531,11 +553,16 @@ typedef struct obstacle
 	}
 	
 }obstacle;
-bool checkCollision(ball b,obstacle o){
+bool checkCollisionCircle(ball b,obstacle o){
 	float d = sqrt((b.x-o.x)*(b.x-o.x) + (b.y-o.y)*(b.y-o.y));
 	return d<=b.r+o.r;
 }
-void handleCollision(ball &b,obstacle &o){
+bool checkCollisionRect(ball b,obstacle o){
+	if(b.x>=o.x-o.w/2.0-b.r&&b.x<=o.x+o.w/2+b.r&&b.y>=o.y-o.h/2.0-b.r&&b.y<=o.y+o.h/2.0+b.r)
+		return true;
+	return false;
+}
+void handleCollisionCircle(ball &b,obstacle &o){
 //	if(b.collision_obj)return;
 	float phi,theta,alpha;  //phi = angle with x-axis line joining both centres and theta = angle of velocity vector of ball
 	float vn,vt,a = 1.0;
@@ -550,10 +577,30 @@ void handleCollision(ball &b,obstacle &o){
 	b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 	b.shoot(M_PI-beta);
 }
+void handleCollisionRect(ball &b,obstacle &o){
+	float ang,alpha=1;
+	if(b.x<=o.x-o.w/2-b.r){
+		ang = M_PI/2.0 + atan(alpha*b.velx/b.vely);
+		b.vel = sqrt(sq(b.vely)+sq(alpha*b.velx));
+	}
+	else if(b.y>=o.y+o.h/2+b.r){
+		//top
+	}
+	else if(b.x>=o.x+o.w/2+b.r){
+		//right side
+	}
+	else if(b.y<=o.y-o.h/2-o.r){
+		ang = -1.0*atan(alpha*b.vely/b.velx);
+		b.vel = sqrt(sq(alpha*b.vely)+sq(b.velx));
+	}
+	b.collision_obj=true;
+	b.sx=b.x-b.stx,b.sy=b.y-b.sty;
+	b.shoot(ang);
+}
 ball my;
 ground gameground;
 sky gamesky;
-obstacle test;
+obstacle test,test2;
 power testpow;
 float ang;
 float add = 0;
@@ -888,7 +935,8 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
-	test.draw();
+	allobstacles[0].draw();
+	allobstacles[1].draw();
 	
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
@@ -926,7 +974,8 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	//test.checkCollision(my);
+	allobstacles[0].checkCollision(my);
+	allobstacles[1].checkCollision(my);
 	
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
@@ -941,10 +990,12 @@ void draw ()
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	//draw3DObject(shape);
-	if(checkCollision(my,test)){
-		//printf("done\n");
-		handleCollision(my,test);
-	}
+	// if(checkCollisionRect(my,test)){
+	// 	handleCollisionRect(my,test);
+	// }
+	// if(checkCollisionCircle(my,test2)){
+	// 	handleCollisionCircle(my,test2);
+	// }
 	
 	//camera_rotation_angle++; // Simulating camera rotation
 	// triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
@@ -1012,7 +1063,11 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	test.create(100.0,100.0,color(1,0,0));
+	allobstacles[0].circle=false;
+	allobstacles[0].create(100.0,100.0,color(1,0,0));
+	allobstacles[1].circle=false;
+	allobstacles[1].create(100.0,100.0,color(0,1,0));
+	allobstacles[1].translate=glm::translate(glm::vec3(100,-200,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
@@ -1044,6 +1099,7 @@ int main (int argc, char** argv)
 	int width = 1300;
 	int height = 1000;
 	float tmp=0;
+	allobstacles = new obstacle[10];
 	GLFWwindow* window = initGLFW(width, height);
 
 	initGL (window, width, height);
@@ -1055,7 +1111,14 @@ int main (int argc, char** argv)
 
 		// OpenGL Draw commands
 		draw();
-		
+		for (int i = 0; i < 2; ++i)
+		{	float x=allobstacles[i].x;
+			float y=allobstacles[i].y;
+			float w=allobstacles[i].w;
+			float h=allobstacles[i].h;
+			if(my.x>=x-w/2.0-my.r&&my.x<=x+w/2.0+my.r&&my.y>=y-h/2.0-my.r&&my.y<=y+h/2.0+my.r==0)
+				allobstacles[i].collision=false;
+		}
 		//printf("%lf %lf \n",xp,yp);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
@@ -1065,13 +1128,20 @@ int main (int argc, char** argv)
 		if(glfwGetKey(window,GLFW_KEY_J)==GLFW_PRESS)pipe_rot+=1;
 		if(glfwGetKey(window,GLFW_KEY_L)==GLFW_PRESS)pipe_rot-=1;
 		//if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS)s*=0.9;
-
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
-			
-			
+				// if(current_time - last_update_time >=0.001)
+				// {
+				// 	if(checkCollisionRect(my,test)){
+				// 		handleCollisionRect(my,test);
+				// 	}
+				// 	if(checkCollisionCircle(my,test2)){
+				// 		handleCollisionCircle(my,test2);
+				// 	}
+				// }
+
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
 				if(PANX>0)PANX-=10.0;
 			}
