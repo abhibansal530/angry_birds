@@ -272,8 +272,9 @@ typedef struct ball{
 		collision_ground=collision_obj=falling=power=false;
 		shootpower=true;
 		sx=sy=0;
-		vel = 500;
-		k=1+0.01/2.0;  //change k acc. to spring length
+		vel = 400;
+		k=1.01;
+		//k=1+0.01/2.0;  //change k acc. to spring length
 		circle = createCircle(r,color(0,0,1));
 		return;	
 	}
@@ -327,16 +328,16 @@ typedef struct ball{
 		//float ang = -1.f*pipe_rot*M_PI/180.f;
 		//ang = 0.5*M_PI - ang;
 		//float vel = 500;
-		//printf("shooted\n");
+		printf("shooted vel:%f\n",vel);
 		st = glfwGetTime();
 		lu=glfwGetTime();
 		isshoot=ballinsky=true;
 		//sx=x,sy=y;
 		MAXHEIGHT+=abs(sty);
 		maxh = (vel*sin(ang))*(vel*sin(ang))/400.f;
-		if(maxh>=MAXHEIGHT){                         //handles going above the window
-			vel = sqrt(400.f*MAXHEIGHT)/sin(ang);
-		}
+		// if(maxh>=MAXHEIGHT){                         //handles going above the window
+		// 	vel = sqrt(400.f*MAXHEIGHT)/sin(ang);
+		// }
 		velx=velx_in=vel*cos(ang),vely=vely_in=vel*sin(ang);
 		//printf("in shoot velx:%f vely:%f\n",velx,vely);
 	}
@@ -347,7 +348,7 @@ typedef struct ball{
 		if(ti-lu>=10e-10){
 			ti-=st;
 			//printf("sx: %f sy: %f\n",sx,sy);
-			if(abs(velx-0.0)<=(float)10e-10&&velx<0){    //ball came to rest
+			if(abs(velx-0.0)<=(float)10e-10&&velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
 				printf("at rest\n");
 				isshoot=ballinsky=false;
 				sx=sy=0;
@@ -527,9 +528,10 @@ typedef struct obstacle
 	}
 	
 	void checkCollision(ball &b){
-		if(b.x>=x-w/2.0-b.r&&b.x<=x+w/2.0+b.r&&b.y>=y-h/2.0-b.r&&b.y<=y+h/2.0+b.r&&!collision&&b.isshoot){
+		float delta=10.0;
+		if(b.x>=x-w/2.0-b.r-delta&&b.x<=x+w/2.0+b.r+delta&&b.y>=y-h/2.0-b.r-delta&&b.y<=y+h/2.0+b.r+delta&&!collision&&b.isshoot){
 			float ang;
-			printf("obscollided x:%f y:%f \n",b.x,b.y);
+			printf("obscollided x:%f y:%f ang:%f\n",b.x,b.y,atan(b.vely/b.velx));
 			collision=true;
 			for(int i=0;i<2;++i){
 				if(allobstacles[i].x!=x&&allobstacles[i].y!=y){
@@ -540,7 +542,9 @@ typedef struct obstacle
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 			if(b.x<=x-w/2.0){
 				printf("left velx:%f vely:%f\n",b.velx,b.vely);
-				ang = M_PI/2.0 + atan(b.velx/b.vely);
+				float tmp = atan(b.velx/abs(b.vely));
+				ang = M_PI/2.0 + tmp;
+				if(b.vely<0)ang*=-1.0;
 			}
 			else {
 				printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
@@ -878,6 +882,16 @@ void createShape(){
 		}
 	shape = create3DObject(GL_POINTS,2*v,vbd,cbd,GL_FILL);
 }
+void clearcollisions(ball b){
+	for (int i = 0; i < 2; ++i)
+	{	float x=allobstacles[i].x;
+		float y=allobstacles[i].y;
+		float w=allobstacles[i].w;
+		float h=allobstacles[i].h;
+		if(b.x>=x-w/2.0-b.r&&b.x<=x+w/2.0+b.r&&b.y>=y-h/2.0-b.r&&b.y<=y+h/2.0+b.r==0)
+			allobstacles[i].collision=false;
+	}
+}
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
@@ -1111,14 +1125,7 @@ int main (int argc, char** argv)
 
 		// OpenGL Draw commands
 		draw();
-		for (int i = 0; i < 2; ++i)
-		{	float x=allobstacles[i].x;
-			float y=allobstacles[i].y;
-			float w=allobstacles[i].w;
-			float h=allobstacles[i].h;
-			if(my.x>=x-w/2.0-my.r&&my.x<=x+w/2.0+my.r&&my.y>=y-h/2.0-my.r&&my.y<=y+h/2.0+my.r==0)
-				allobstacles[i].collision=false;
-		}
+		clearcollisions(my);
 		//printf("%lf %lf \n",xp,yp);
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
