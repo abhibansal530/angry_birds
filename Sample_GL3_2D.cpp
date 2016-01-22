@@ -209,6 +209,8 @@ bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0,MAXHEIGHT=500;
 bool ballinsky=false;   //whether ball in sky
+float PANX = 0;
+bool MANPAN=true;
 typedef struct color{
 	float r,g,b;
 	color(float r,float g,float b):
@@ -309,6 +311,9 @@ typedef struct ball{
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
 //		printf("x:%f y:%f\n",x,y);
+		if(x>600){                        //to handle screen panning before drawing ball
+			PANX=x-650+100;
+		}
 		draw3DObject(circle);	
 	}
 	void shoot(float ang){
@@ -406,10 +411,10 @@ typedef struct ground
 	void create(){
 		GLfloat vbd[]={
 			-650,-500,0,
-			650,-500,0,
-			650,-100,0,
+			1300,-500,0,
+			1300,-100,0,
 
-			650,-100,0,
+			1300,-100,0,
 			-650,-500,0,
 			-650,-100,0
 		};
@@ -449,10 +454,10 @@ typedef struct sky{
 	void create(){
 		GLfloat vbd[]={
 			-650,-100,0,
-			650,-100,0,
-			650,500,0,
+			1300,-100,0,
+			1300,500,0,
 
-			650,500,0,
+			1300,500,0,
 			-650,-100,0,
 			-650,500,0
 		};
@@ -552,7 +557,7 @@ obstacle test;
 power testpow;
 float ang;
 float add = 0;
-float PANX = 0;
+
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -1038,7 +1043,7 @@ int main (int argc, char** argv)
 {
 	int width = 1300;
 	int height = 1000;
-
+	float tmp=0;
 	GLFWwindow* window = initGLFW(width, height);
 
 	initGL (window, width, height);
@@ -1065,11 +1070,13 @@ int main (int argc, char** argv)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
+			
+			
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
-				PANX-=10.0;
+				if(PANX>0)PANX-=10.0;
 			}
 			if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS){
-				PANX+=10.0;
+				if(PANX<650)PANX+=10.0;
 			}
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
 				s*=0.99;
