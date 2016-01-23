@@ -309,7 +309,13 @@ typedef struct ball{
 			printf("onground\n");
 			collision_ground=false;
 
-		}
+		 }
+		// if(abs(velx-0.0)<=(float)10e-10&&velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
+		// 	printf("at rest\n");
+		// 	isshoot=ballinsky=false;
+		// 	sx=sy=0;
+		// 	return;
+		// }
 		MVP = VP*Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 		//x=nx,y=ny;
@@ -442,7 +448,15 @@ typedef struct ground
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
+		
 		if(b.onground()&&b.falling&&!b.collision_ground){
+			if(abs(b.velx-0.0)<=(float)10e-10&&b.velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
+				printf("at rest\n");
+				b.isshoot=ballinsky=false;
+				b.sx=b.sy=0;
+				b.collision_ground=false;
+				return;
+			}
 			printf("collided ground x:%f y:%f \n",b.x,b.y);
 			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
@@ -487,13 +501,16 @@ typedef struct sky{
 }sky;
 typedef struct obstacle
 {	VAO* shape;
-	glm::mat4 translate;
+	glm::mat4 translate,translateagain;
 	float w,h;   //width and height
 	float x,y,r; 
 	bool circle;     //whether circle
-	bool collision; 
-	void create(int wi,int he,color c){
+	bool collision,dir; 
+	void create(int wi,int he,color c,bool cir){
+		dir=true;
+		circle=cir;
 		collision=false;
+		translateagain=glm::mat4(1.0f);
 		translate=glm::mat4(1.0f);
 		x=y=0;
 		
@@ -512,7 +529,7 @@ typedef struct obstacle
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
 		 //= glm::translate(glm::vec3(500,-300,0));
-		Matrices.model*=translate;
+		Matrices.model*=(translateagain*translate);
 		float *mv = (&Matrices.model[0][0]);
 		x =  mv[12];
 		y =  mv[13];
@@ -558,6 +575,27 @@ typedef struct obstacle
 			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;
 			b.shoot(ang);
 		}
+	}
+
+	void move(int vel){
+		float nx,ny,MAXH=200,MINH=-200;
+		
+		if(!dir){
+			ny =y-vel;
+		}
+		if(dir){
+			nx=x,ny=y+vel;
+		}
+		if(ny>=MAXH&&dir){
+			dir=0;
+	//		printf("godown\n");
+		}
+		if(ny<=MINH&&!dir){
+			dir=1;
+	//		printf("goup\n");
+		}
+	//	printf("ny :%f\n",ny);
+		translateagain = glm::translate(glm::vec3(nx,ny,0));
 	}
 	
 }obstacle;
@@ -612,7 +650,7 @@ obstacle test,test2;
 power testpow;
 float ang;
 float add = 0;
-
+int OBSTACLES=0;
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -888,7 +926,7 @@ void createShape(){
 }
 void clearcollisions(ball b){
 	float delta = 10.0;
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < OBSTACLES; ++i)
 	{	float x=allobstacles[i].x;
 		float y=allobstacles[i].y;
 		float w=allobstacles[i].w;
@@ -956,8 +994,7 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
-	allobstacles[0].draw();
-	allobstacles[1].draw();
+	for(int i=0;i<OBSTACLES;++i)allobstacles[i].draw();
 	
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
@@ -995,8 +1032,9 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	allobstacles[0].checkCollision(my);
-	allobstacles[1].checkCollision(my);
+	for(int i=0;i<OBSTACLES;++i)allobstacles[i].checkCollision(my);
+	// allobstacles[0].checkCollision(my);
+	// allobstacles[1].checkCollision(my);
 	
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
@@ -1084,11 +1122,12 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	allobstacles[0].circle=false;
-	allobstacles[0].create(100.0,100.0,color(1,0,0));
-	allobstacles[1].circle=false;
-	allobstacles[1].create(100.0,100.0,color(0,1,0));
+	OBSTACLES = 3;
+	allobstacles[0].create(100.0,100.0,color(1,0,0),false);
+	allobstacles[1].create(100.0,100.0,color(0,1,0),false);
 	allobstacles[1].translate=glm::translate(glm::vec3(100,-200,0));
+	allobstacles[2].create(500,50,color(1,0,0),false);
+	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
@@ -1155,7 +1194,7 @@ int main (int argc, char** argv)
 				// 		handleCollisionCircle(my,test2);
 				// 	}
 				// }
-
+			allobstacles[0].move(1.0);
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
 				if(PANX>0)PANX-=10.0;
 			}
