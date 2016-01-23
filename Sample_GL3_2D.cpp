@@ -540,16 +540,20 @@ typedef struct obstacle
 				}
 			}
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			if(b.x<=x-w/2.0){
+			if(b.x<=x-w/2.0){                     //left
 				printf("left velx:%f vely:%f\n",b.velx,b.vely);
 				float tmp = atan(b.velx/abs(b.vely));
 				ang = M_PI/2.0 + tmp;
 				if(b.vely<0)ang*=-1.0;
 			}
-			else {
+			else if(b.vely>0){
 				printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
 				ang = -1.0*atan(b.vely/b.velx);
 				//ang = -1.0*M_PI/4.0;
+			}
+			else if(b.vely<0){
+				printf("top collision\n");
+				ang = atan(abs(b.vely)/b.velx);
 			}
 			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;
 			b.shoot(ang);
@@ -883,13 +887,16 @@ void createShape(){
 	shape = create3DObject(GL_POINTS,2*v,vbd,cbd,GL_FILL);
 }
 void clearcollisions(ball b){
+	float delta = 10.0;
 	for (int i = 0; i < 2; ++i)
 	{	float x=allobstacles[i].x;
 		float y=allobstacles[i].y;
 		float w=allobstacles[i].w;
 		float h=allobstacles[i].h;
-		if(b.x>=x-w/2.0-b.r&&b.x<=x+w/2.0+b.r&&b.y>=y-h/2.0-b.r&&b.y<=y+h/2.0+b.r==0)
-			allobstacles[i].collision=false;
+		// if(b.x>=x-w/2.0-b.r&&b.x<=x+w/2.0+b.r&&b.y>=y-h/2.0-b.r&&b.y<=y+h/2.0+b.r==0)
+		// 	allobstacles[i].collision=false;
+		if(b.x<=x-w/2.0-b.r-delta||b.x>=x+w/2.0+b.r+delta||b.y<=y-h/2.0-b.r-delta||b.y>=y+h/2.0+b.r+delta)
+			if(allobstacles[i].collision)allobstacles[i].collision=false;
 	}
 }
 float camera_rotation_angle = 90;
