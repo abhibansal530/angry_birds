@@ -268,6 +268,8 @@ typedef struct ball{
 	glm::mat4 project;
 	glm::mat4 translate;
 	void init(){
+		s=1;
+		PANX=0;
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
 		ballinsky=isshoot=collision_ground=collision_obj=falling=power=false;
@@ -358,6 +360,10 @@ typedef struct ball{
 		//printf("in shoot velx:%f vely:%f\n",velx,vely);
 	}
 	void fire(float s){
+		if(x>=1300||x<-650){
+			init();
+			return;
+		}
 		float nx,ny;
 		float ct;
 		ti = glfwGetTime();
@@ -1154,7 +1160,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	OBSTACLES = 7;
+	OBSTACLES = 9;
 	allobstacles[0].create(100.0,100.0,color(1,0,0),false,false);
 	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);
 	allobstacles[1].translate=glm::translate(glm::vec3(100,-200,0));
@@ -1165,9 +1171,14 @@ void initGL (GLFWwindow* window, int width, int height)
 	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
 	allobstacles[4].translate = glm::translate(glm::vec3(700,-225,0));
 	allobstacles[5].create(500,50,color(1,0,0),false,false);
-	allobstacles[5].translate=glm::translate(glm::vec3(700,0,0));
+	allobstacles[5].translate=glm::translate(glm::vec3(700,-50,0));
 	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[6].translate = glm::translate(glm::vec3(700,75,0));
+	allobstacles[6].translate = glm::translate(glm::vec3(700,75-50,0));
+	allobstacles[7].create(500,50,color(1,0,0),false,false);
+	allobstacles[7].translate=glm::translate(glm::vec3(700,150,0));
+	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
+
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
@@ -1199,7 +1210,7 @@ int main (int argc, char** argv)
 	int width = 1300;
 	int height = 1000;
 	float tmp=0;
-	allobstacles = new obstacle[10];
+	allobstacles = new obstacle[20];
 	GLFWwindow* window = initGLFW(width, height);
 
 	initGL (window, width, height);
@@ -1234,6 +1245,11 @@ int main (int argc, char** argv)
 				// 		handleCollisionCircle(my,test2);
 				// 	}
 				// }
+			// double xp,yp;
+			// glfwGetCursorPos(window,&xp,&yp);
+			// xp-=650,yp=500-yp;
+			//printf("xp:%f yp:%f\n",xp,yp);
+			//pipe_rot=atan(yp/xp)*180.0f/M_PI;
 			allobstacles[0].move(1.0);
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
 				if(PANX>0)PANX-=10.0;
@@ -1247,8 +1263,10 @@ int main (int argc, char** argv)
 				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
 			}
 			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS){
-				s/=0.99;
-				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
+				if(s<1){
+					s/=0.99;
+					my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
+				}
 			}
 			last_update_time = current_time;
 		}
