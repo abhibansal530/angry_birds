@@ -551,7 +551,7 @@ typedef struct obstacle
 			collision=true;
 			for(int i=0;i<2;++i){
 				if(allobstacles[i].x!=x&&allobstacles[i].y!=y){
-					allobstacles[i].collision=false;
+					allobstacles[i].collision=false;            //set collision with other obstacles as false
 					printf("entered %f %f\n",x,y);
 				}
 			}
@@ -737,6 +737,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 							printf("myx:%f myy:%f\n",my.x,my.y);
 							testball[i].sx=my.x-STX;
 							testball[i].sy=my.y-STY;
+							testball[i].stx=STX;
+							testball[i].sty=STY;
 							testball[i].vel=400;
 							testball[i].shoot(atan(my.vely/my.velx));
 						}
@@ -1130,8 +1132,14 @@ void draw ()
 	}
 
 	for(int i=0;i<OBSTACLES;++i){
-		if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
-		else allobstacles[i].hit(my);
+		if(!allobstacles[i].target){
+			allobstacles[i].checkCollision(my);
+			allobstacles[i].checkCollision(testball[0]);
+		}
+		else {
+			allobstacles[i].hit(my);
+			allobstacles[i].hit(testball[0]);
+		}
 	}
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
