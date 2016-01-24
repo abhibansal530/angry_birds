@@ -604,14 +604,14 @@ typedef struct obstacle
 			available=false;
 		}	
 	}
-	void move(int vel){
+	void move(float vel){
 		float nx,ny,MAXH=200,MINH=-200;
 		
 		if(!dir){
-			ny =y-vel;
+			ny =y-vel,nx=0;
 		}
 		if(dir){
-			nx=x,ny=y+vel;
+			nx=0,ny=y+vel;
 		}
 		if(ny>=MAXH&&dir){
 			dir=0;
@@ -1021,6 +1021,7 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
+	printf("ox:%f oy:%f\n",allobstacles[1].x,allobstacles[1].y);
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target||(allobstacles[i].target&&allobstacles[i].available))
 			allobstacles[i].draw();
@@ -1163,7 +1164,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	OBSTACLES = 9;
 	allobstacles[0].create(100.0,100.0,color(1,0,0),false,false);
 	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);
-	allobstacles[1].translate=glm::translate(glm::vec3(100,-200,0));
+	allobstacles[1].translate=glm::translate(glm::vec3(100,0,0));
 	allobstacles[2].create(500,50,color(1,0,0),false,false);
 	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
 	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
@@ -1251,6 +1252,7 @@ int main (int argc, char** argv)
 			//printf("xp:%f yp:%f\n",xp,yp);
 			//pipe_rot=atan(yp/xp)*180.0f/M_PI;
 			allobstacles[0].move(1.0);
+			allobstacles[1].move(1.0);
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
 				if(PANX>0)PANX-=10.0;
 			}
