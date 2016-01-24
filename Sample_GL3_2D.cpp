@@ -273,7 +273,7 @@ typedef struct ball{
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
 		ballinsky=isshoot=collision_ground=collision_obj=falling=power=false;
-		shootpower=true;
+		MANPAN=shootpower=true;
 		sx=sy=0;
 		vel = 400;
 		k=1.01;
@@ -710,7 +710,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 					s=1;
 					//my.vel=500.0;        //rather create a init function
 					my.shoot(ang);           
-					my.shootpower=true;  
+					my.shootpower=true;
+					MANPAN=false;  
 				}
 				break;
 			default:
@@ -1021,7 +1022,6 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
-	printf("ox:%f oy:%f\n",allobstacles[1].x,allobstacles[1].y);
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target||(allobstacles[i].target&&allobstacles[i].available))
 			allobstacles[i].draw();
@@ -1252,12 +1252,12 @@ int main (int argc, char** argv)
 			//printf("xp:%f yp:%f\n",xp,yp);
 			//pipe_rot=atan(yp/xp)*180.0f/M_PI;
 			allobstacles[0].move(1.0);
-			allobstacles[1].move(1.0);
+			allobstacles[1].move(2.0);
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
-				if(PANX>0)PANX-=10.0;
+				if(PANX>0&&MANPAN)PANX-=10.0;
 			}
 			if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS){
-				if(PANX<650)PANX+=10.0;
+				if(PANX<650&&MANPAN)PANX+=10.0;
 			}
 			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
 				s*=0.99;
