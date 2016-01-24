@@ -208,6 +208,7 @@ float rectangle_rot_dir = 1,pipe_rot=-52.0;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float tx,ty,ti=0,MAXHEIGHT=500;
+float s = 1;
 bool ballinsky=false;   //whether ball in sky
 float PANX = 0;
 bool MANPAN=true,firsttime=true;
@@ -265,7 +266,16 @@ typedef struct ball{
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
 	glm::mat4 project;
-	glm::mat4 translate; 
+	glm::mat4 translate;
+	void init(){
+		project = glm::mat4(1.0f);
+		translate = glm::mat4(1.0f);
+		ballinsky=isshoot=collision_ground=collision_obj=falling=power=false;
+		shootpower=true;
+		sx=sy=0;
+		vel = 400;
+		k=1.01;
+	} 
 	void create(){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
@@ -304,7 +314,7 @@ typedef struct ball{
 		x /= wp;
 		y /= wp;
 		z /= wp;
-		//printf("%f %f\n",x,y);
+		printf("%f %f\n",x,y);
 		if (onground()&&collision_ground){
 			printf("onground\n");
 			collision_ground=false;
@@ -354,10 +364,11 @@ typedef struct ball{
 		if(ti-lu>=10e-10){
 			ti-=st;
 			//printf("sx: %f sy: %f\n",sx,sy);
-			if(abs(velx-0.0)<=(float)10e-10&&velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
-				printf("at rest\n");
-				isshoot=ballinsky=false;
-				sx=sy=0;
+			if(isshoot&&abs(velx-0.0)<=(float)10e-10&&velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
+				printf("at rest in fire\n");
+				init();
+				// isshoot=ballinsky=false;
+				// sx=sy=0;
 				return;
 			}
 			nx = sx+velx_in*ti;
@@ -448,20 +459,24 @@ typedef struct ground
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		
+		float alpha=0.5,ang,beta=0.5;
 		if(b.onground()&&b.falling&&!b.collision_ground){
-			if(abs(b.velx-0.0)<=(float)10e-10&&b.velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
-				printf("at rest\n");
-				b.isshoot=ballinsky=false;
-				b.sx=b.sy=0;
-				b.collision_ground=false;
+			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||b.y<-301){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
+				printf("at rest in ground\n");
+				b.init();
+				printf("new vel %f\n",b.vel);
+				s=1;
+				// b.isshoot=ballinsky=false;
+				// b.sx=b.sy=0;
+				// b.collision_ground=false;
 				return;
 			}
 			printf("collided ground x:%f y:%f \n",b.x,b.y);
 			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
-			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;  //alpha of collision = 1/600
-			float ang = atan(-1*b.vely/b.velx);
+			b.vel = sqrt((beta*beta*b.velx*b.velx + alpha*alpha*b.vely*b.vely));  //alpha of collision = 1/600
+			if(b.velx>0)ang = atan(-1*alpha*b.vely/b.velx*beta);
+			else ang = M_PI/2.0 + atan(abs(b.velx*beta)/abs(alpha*b.vely));
 			b.shoot(ang);  //angle is hard-coded for test
 		}
 	}
@@ -505,10 +520,10 @@ typedef struct obstacle
 	float w,h;   //width and height
 	float x,y,r; 
 	bool circle;     //whether circle
-	bool collision,dir; 
-	void create(int wi,int he,color c,bool cir){
-		dir=true;
-		circle=cir;
+	bool collision,dir,target,available; 
+	void create(int wi,int he,color c,bool cir,bool tar){
+		available=dir=true;
+		circle=cir,target=tar;
 		collision=false;
 		translateagain=glm::mat4(1.0f);
 		translate=glm::mat4(1.0f);
@@ -576,7 +591,13 @@ typedef struct obstacle
 			b.shoot(ang);
 		}
 	}
-
+	void hit(ball b){
+		float d = sqrt((b.x-x)*(b.x-x) + (b.y-y)*(b.y-y));
+		//printf("D:%f R:%f r:%f\n",d,r,b.r);
+		if(d<=r+b.r&&available){
+			available=false;
+		}	
+	}
 	void move(int vel){
 		float nx,ny,MAXH=200,MINH=-200;
 		
@@ -680,7 +701,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
 				if(!ballinsky){
-					my.vel=500.0;        //rather create a init function
+					s=1;
+					//my.vel=500.0;        //rather create a init function
 					my.shoot(ang);           
 					my.shootpower=true;  
 				}
@@ -940,7 +962,6 @@ void clearcollisions(ball b){
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
-float s = 1;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw ()
@@ -994,7 +1015,10 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
-	for(int i=0;i<OBSTACLES;++i)allobstacles[i].draw();
+	for(int i=0;i<OBSTACLES;++i){
+		if(!allobstacles[i].target||(allobstacles[i].target&&allobstacles[i].available))
+			allobstacles[i].draw();
+	}
 	
 
 	// draw3DObject draws the VAO given to it using current MVP matrix
@@ -1032,7 +1056,10 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	for(int i=0;i<OBSTACLES;++i)allobstacles[i].checkCollision(my);
+	// for(int i=0;i<OBSTACLES;++i){
+	// 	if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
+	// 	else allobstacles[i].hit(my);
+	// }
 	// allobstacles[0].checkCollision(my);
 	// allobstacles[1].checkCollision(my);
 	
@@ -1040,6 +1067,11 @@ void draw ()
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
 	if(my.power)testpow.draw();
+
+	for(int i=0;i<OBSTACLES;++i){
+		if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
+		else allobstacles[i].hit(my);
+	}
 	//printf("ang: %f\n",ang);
 	Matrices.model = glm::mat4(1.0f);
 	//glm::mat4 translateBall = glm::translate(glm::vec3(-1.8+2*sin(ang),-2+2*cos(ang),0));
@@ -1122,12 +1154,20 @@ void initGL (GLFWwindow* window, int width, int height)
 	my.create();
 	gameground.create();
 	gamesky.create();
-	OBSTACLES = 3;
-	allobstacles[0].create(100.0,100.0,color(1,0,0),false);
-	allobstacles[1].create(100.0,100.0,color(0,1,0),false);
+	OBSTACLES = 7;
+	allobstacles[0].create(100.0,100.0,color(1,0,0),false,false);
+	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);
 	allobstacles[1].translate=glm::translate(glm::vec3(100,-200,0));
-	allobstacles[2].create(500,50,color(1,0,0),false);
+	allobstacles[2].create(500,50,color(1,0,0),false,false);
 	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
+	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[3].translate = glm::translate(glm::vec3(500,-225,0));
+	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[4].translate = glm::translate(glm::vec3(700,-225,0));
+	allobstacles[5].create(500,50,color(1,0,0),false,false);
+	allobstacles[5].translate=glm::translate(glm::vec3(700,0,0));
+	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[6].translate = glm::translate(glm::vec3(700,75,0));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
