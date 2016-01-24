@@ -543,7 +543,7 @@ typedef struct obstacle
 	}
 	
 	void checkCollision(ball &b){
-		float delta=10.0;
+		float delta=10.0,alpha;
 		if(b.x>=x-w/2.0-b.r-delta&&b.x<=x+w/2.0+b.r+delta&&b.y>=y-h/2.0-b.r-delta&&b.y<=y+h/2.0+b.r+delta&&!collision&&b.isshoot){
 			float ang;
 			printf("obscollided x:%f y:%f ang:%f\n",b.x,b.y,atan(b.vely/b.velx));
@@ -607,11 +607,13 @@ typedef struct power{       //singleton,only one instance needed
 	float x,y,r;
 	float inx,iny,inti;  //parameters to be set when ball clicked(or power fired)
 	bool available;
+	int type;       //1-fire 2-speedup
 	VAO *circle;
 	GLfloat vbd[7000];
 	GLfloat cbd[7000];
 	glm::mat4 translate;
-	void create(float ra){
+	void create(float ra,int ty){
+		type=ty;
 		r = ra;
 		available=true;
 		circle = createCircle(r,color(1,1,1));
@@ -694,7 +696,7 @@ ground gameground;
 sky gamesky;
 obstacle test,test2;
 power testpow;
-float ang;
+float ang,ZOOM=1.0;
 float add = 0;
 int OBSTACLES=0;
 /* Executed when a regular key is pressed/released/held-down */
@@ -706,18 +708,29 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 	if (action == GLFW_RELEASE) {
 		switch (key) {
 			case GLFW_KEY_C:
-				rectangle_rot_status = !rectangle_rot_status;
+				ZOOM*=10;
 				break;
 			case GLFW_KEY_P:
 				triangle_rot_status = !triangle_rot_status;
 				break;
 			case GLFW_KEY_X:
 				if(my.shootpower){
-					my.power=true;
-					testpow.inx = my.x;
-					testpow.iny = my.y;
-					testpow.inti=glfwGetTime();
-					my.shootpower=false;
+					if(testpow.type==1){
+						my.power=true;
+						testpow.inx = my.x;
+						testpow.iny = my.y;
+						testpow.inti=glfwGetTime();
+						my.shootpower=false;
+					}
+					else if(testpow.type==2){
+						float ang=atan(my.vely/my.velx);
+						float r = 150;
+						my.sx+=r*cos(ang);
+						my.sy+=r*sin(ang);
+						my.shootpower=false;
+
+					}
+
 				}
 				break;
 				// do something ..
@@ -818,7 +831,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 
 	// Ortho projection for 2D views
 	//Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
-	Matrices.projection = glm::ortho(-650.0f, 650.0f, -500.0f, 500.0f, 0.1f, 500.0f);
+	Matrices.projection = glm::ortho(-650.0f*ZOOM, 650.0f*ZOOM, -500.0f*ZOOM, 500.0f*ZOOM, 0.1f, 500.0f);
 }
 
 VAO *triangle, *rectangle,*shape;
@@ -1203,7 +1216,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
 	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
 	testball = createCircle(15,color(0,0,1));
-	testpow.create(10.0);
+	testpow.create(10.0,2);
 	//createBox();
 	createPipe();
 	createSpring();
