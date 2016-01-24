@@ -236,6 +236,15 @@ VAO* createCircle(float r,color c){
 	}
 	return create3DObject(GL_TRIANGLES,3*v,vbd,cbd,GL_FILL);
 }
+void drawCircle(VAO* circle,float x,float y){
+	glm::mat4 MVP;
+	glm::mat4 VP = Matrices.projection * Matrices.view;
+	glm::mat4 tr = glm::translate(glm::vec3(x,y,0));
+	Matrices.model = tr;
+	MVP = VP*Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+	draw3DObject(circle);
+}
 VAO* createRectangle(int w,int h,color c){
 	GLfloat vbd[]={
 		-w/2.0,-h/2.0,0,
@@ -305,7 +314,7 @@ typedef struct ball{
 		}
 		glm::mat4 translateBall = translate*glm::translate(glm::vec3(nx,ny*rs,0));
 		glm::mat4 rotateBall = glm::rotate((float)(rang),glm::vec3(0,0,1));
-		glm::mat4 translateBallagain = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
+		glm::mat4 translateBallagain = glm::translate (glm::vec3(-3.5*0.9*115,-3*0.9*115,0));
 		Matrices.model*=(project*translateBallagain*rotateBall*translateBall);
 		float *mv = (&Matrices.model[0][0]);
 		x =  mv[12];
@@ -399,39 +408,7 @@ typedef struct ball{
 		x=nx,y=ny;
 	}
 } ball;
-typedef struct power{       //singleton,only one instance needed
-	float x,y,r;
-	float inx,iny,inti;  //parameters to be set when ball clicked
-	VAO *circle;
-	GLfloat vbd[7000];
-	GLfloat cbd[7000];
-	glm::mat4 translate;
-	void create(float ra){
-		r = ra;
-		circle = createCircle(r,color(1,1,1));
-		return;	
-	}
-	void draw(){
-		float ti = glfwGetTime()-inti;
-		glm::mat4 MVP;
-		glm::mat4 VP = Matrices.projection * Matrices.view;
-		Matrices.model = glm::mat4(1.0f);
-		translate = glm::translate(glm::vec3(inx,iny-100.0*ti*ti,0));
-		Matrices.model*=translate;
-		float *mv = (&Matrices.model[0][0]);
-		x =  mv[12];
-		y =  mv[13];
-		float z =  mv[14];
-		float wp =  mv[15];
 
-		x /= wp;
-		y /= wp;
-		z /= wp;
-		MVP = VP*Matrices.model;
-		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
-		draw3DObject(circle);	
-	}
-}power;
 typedef struct ground
 {
 	VAO *shape;
@@ -626,6 +603,48 @@ typedef struct obstacle
 	}
 	
 }obstacle;
+typedef struct power{       //singleton,only one instance needed
+	float x,y,r;
+	float inx,iny,inti;  //parameters to be set when ball clicked(or power fired)
+	bool available;
+	VAO *circle;
+	GLfloat vbd[7000];
+	GLfloat cbd[7000];
+	glm::mat4 translate;
+	void create(float ra){
+		r = ra;
+		available=true;
+		circle = createCircle(r,color(1,1,1));
+		return;	
+	}
+	void draw(){
+		if(!available)return;
+		float ti = glfwGetTime()-inti;
+		glm::mat4 MVP;
+		glm::mat4 VP = Matrices.projection * Matrices.view;
+		Matrices.model = glm::mat4(1.0f);
+		translate = glm::translate(glm::vec3(inx,iny-100.0*ti*ti,0));
+		Matrices.model*=translate;
+		float *mv = (&Matrices.model[0][0]);
+		x =  mv[12];
+		y =  mv[13];
+		float z =  mv[14];
+		float wp =  mv[15];
+
+		x /= wp;
+		y /= wp;
+		z /= wp;
+		MVP = VP*Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+		draw3DObject(circle);	
+	}
+	void hit(obstacle &o){
+		float d = sqrt(sq(x-o.x)+sq(y-o.y));
+		if(d<=r+o.r){
+			available=o.available=false;
+		}
+	}
+}power;
 bool checkCollisionCircle(ball b,obstacle o){
 	float d = sqrt((b.x-o.x)*(b.x-o.x) + (b.y-o.y)*(b.y-o.y));
 	return d<=b.r+o.r;
@@ -803,7 +822,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 }
 
 VAO *triangle, *rectangle,*shape;
-VAO *box,*circle,*pipe,*spring;
+VAO *box,*circle,*pipe,*spring,*testball;
 
 // Creates the triangle object used in this sample code
 void createTriangle ()
@@ -1032,7 +1051,7 @@ void draw ()
 	
 	
 	Matrices.model = glm::mat4(1.0f);
-	glm::mat4 translateCircle = glm::translate (glm::vec3(-3.5*100,-3*100,0));
+	glm::mat4 translateCircle = glm::translate (glm::vec3(-3.5*115,-3*115,0));
 	//glm::mat4 rotateCircle = glm::rotate (glm::vec3(0,0,1))
 	Matrices.model*=translateCircle;
 	MVP = VP*Matrices.model;
@@ -1040,7 +1059,7 @@ void draw ()
 	draw3DObject(circle);
 	
 	Matrices.model = glm::mat4(1.0f);
-	glm::mat4 translatePipe = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
+	glm::mat4 translatePipe = glm::translate (glm::vec3(-3.5*0.9*115,-3*0.9*115,0));
 	glm::mat4 rotatePipe = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
 	
 	Matrices.model*=(translatePipe*rotatePipe);
@@ -1052,7 +1071,7 @@ void draw ()
 	Matrices.model = glm::mat4(1.0f);
 	glm::mat4 scaleSpring = glm::scale(glm::vec3(1,s,1));
 	glm::mat4 translate = glm::translate(glm::vec3(0,s*50.0-50.0,0));
-	glm::mat4 translateSpring = glm::translate (glm::vec3(-3.5*0.9*100,-3*0.9*100,0));
+	glm::mat4 translateSpring = glm::translate (glm::vec3(-3.5*0.9*115,-3*0.9*115,0));
 	glm::mat4 rotateSpring = glm::rotate((float)(pipe_rot*M_PI/180.0f),glm::vec3(0,0,1));
 	Matrices.model*=(translateSpring*rotateSpring*translate*scaleSpring);
 	MVP = VP*Matrices.model;
@@ -1073,7 +1092,10 @@ void draw ()
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
-	if(my.power)testpow.draw();
+	if(my.power){
+		testpow.draw();
+		for(int i=0;i<OBSTACLES;++i)testpow.hit(allobstacles[i]);
+	}
 
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
@@ -1085,6 +1107,7 @@ void draw ()
 	//Matrices.model*=translateBall;
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+	drawCircle(testball,-3.5*115-70.0,-3*115);
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	//draw3DObject(shape);
@@ -1179,7 +1202,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	allobstacles[7].translate=glm::translate(glm::vec3(700,150,0));
 	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
 	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
-
+	testball = createCircle(15,color(0,0,1));
 	testpow.create(10.0);
 	//createBox();
 	createPipe();
