@@ -202,7 +202,7 @@ void draw3DObject (struct VAO* vao)
 /**************************
  * Customizable functions *
  **************************/
-
+float STX,STY;
 float triangle_rot_dir = 1;
 float rectangle_rot_dir = 1,pipe_rot=-52.0;
 bool triangle_rot_status = true;
@@ -350,6 +350,7 @@ typedef struct ball{
 		if(firsttime){
 			firsttime=false;
 			stx =x,sty=y;
+			STX=stx,STY=sty;
 		}
 		float maxh;
 		//float ang = -1.f*pipe_rot*M_PI/180.f;
@@ -692,6 +693,7 @@ void handleCollisionRect(ball &b,obstacle &o){
 	b.shoot(ang);
 }
 ball my;
+ball testball[3];
 ground gameground;
 sky gamesky;
 obstacle test,test2;
@@ -729,6 +731,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						my.sy+=r*sin(ang);
 						my.shootpower=false;
 
+					}
+					else if(testpow.type==3&&my.isshoot){
+						for(int i=0;i<1;++i){
+							printf("myx:%f myy:%f\n",my.x,my.y);
+							testball[i].sx=my.x-STX;
+							testball[i].sy=my.y-STY;
+							testball[i].vel=400;
+							testball[i].shoot(atan(my.vely/my.velx));
+						}
+						my.shootpower=false;
 					}
 
 				}
@@ -835,7 +847,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 }
 
 VAO *triangle, *rectangle,*shape;
-VAO *box,*circle,*pipe,*spring,*testball;
+VAO *box,*circle,*pipe,*spring;
 
 // Creates the triangle object used in this sample code
 void createTriangle ()
@@ -1095,6 +1107,7 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
+	gameground.checkCollision(testball[0]);  //check with other(power) balls
 	// for(int i=0;i<OBSTACLES;++i){
 	// 	if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
 	// 	else allobstacles[i].hit(my);
@@ -1105,6 +1118,12 @@ void draw ()
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
+	for(int i=0;i<1;++i){
+		if(testball[i].isshoot){
+			testball[i].fire(s);
+			printf("%d ball fired\n",i+1);
+		}
+	}
 	if(my.power){
 		testpow.draw();
 		for(int i=0;i<OBSTACLES;++i)testpow.hit(allobstacles[i]);
@@ -1120,7 +1139,7 @@ void draw ()
 	//Matrices.model*=translateBall;
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
-	drawCircle(testball,-3.5*115-70.0,-3*115);
+//	drawCircle(testball,-3.5*115-70.0,-3*115);
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	//draw3DObject(shape);
@@ -1195,6 +1214,9 @@ void initGL (GLFWwindow* window, int width, int height)
 	//createRectangle();
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
+	testball[0].r=15;
+	testball[0].create();
+	//testball[1].create();
 	gameground.create();
 	gamesky.create();
 	OBSTACLES = 9;
@@ -1215,8 +1237,8 @@ void initGL (GLFWwindow* window, int width, int height)
 	allobstacles[7].translate=glm::translate(glm::vec3(700,150,0));
 	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
 	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
-	testball = createCircle(15,color(0,0,1));
-	testpow.create(10.0,2);
+	//testball = createCircle(15,color(0,0,1));
+	testpow.create(10.0,3);
 	//createBox();
 	createPipe();
 	createSpring();
