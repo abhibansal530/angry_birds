@@ -813,14 +813,15 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				break;
 			case GLFW_KEY_3:
 				if(my.isshoot&&my.shootpower){
-					for(int i=0;i<1;++i){
+					for(int i=0;i<2;++i){
 						printf("myx:%f myy:%f\n",my.x,my.y);
 						testball[i].sx=my.x-STX;
 						testball[i].sy=my.y-STY;
 						testball[i].stx=STX;
 						testball[i].sty=STY;
-						testball[i].vel=400;
-						testball[i].shoot(atan(my.vely/my.velx));
+						testball[i].vel=200;
+						if(i==0)testball[i].shoot(atan(my.vely/my.velx));
+						else testball[i].shoot(-1*atan(my.vely/my.velx));
 					}
 					
 				}
@@ -1175,7 +1176,7 @@ void draw ()
 	//pipe_rot+=1;
 	//my.draw(0,0.25+0.01+0.15);
 	gameground.checkCollision(my);
-	gameground.checkCollision(testball[0]);  //check with other(power) balls
+	for(int j=0;j<2;++j)gameground.checkCollision(testball[j]);  //check with other(power) balls
 	// for(int i=0;i<OBSTACLES;++i){
 	// 	if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
 	// 	else allobstacles[i].hit(my);
@@ -1186,7 +1187,7 @@ void draw ()
 	float ang = pipe_rot*M_PI/180.0f;
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
-	for(int i=0;i<1;++i){
+	for(int i=0;i<2;++i){
 		if(testball[i].isshoot){
 			testball[i].fire(s);
 			printf("%d ball fired\n",i+1);
@@ -1199,12 +1200,12 @@ void draw ()
 
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target){
-			allobstacles[i].checkCollision(my);
-			allobstacles[i].checkCollision(testball[0]);
+			allobstacles[i].checkCollision(my);       //with main ball
+			for(int j=0;j<2;++j)allobstacles[i].checkCollision(testball[j]);  //with power balls
 		}
 		else {
-			allobstacles[i].hit(my);
-			allobstacles[i].hit(testball[0]);
+			allobstacles[i].hit(my);                    //main ball
+			for(int j=0;j<2;++j)allobstacles[i].hit(testball[j]);       //power balls
 		}
 	}
 	//printf("ang: %f\n",ang);
@@ -1312,9 +1313,8 @@ void initGL (GLFWwindow* window, int width, int height)
 	//createRectangle();
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
-	testball[0].r=15;
-	testball[0].create();
-	//testball[1].create();
+	for(int i=0;i<2;++i)testball[i].r=15;
+		for(int i=0;i<2;++i)testball[i].create();
 	gameground.create();
 	gamesky.create();
 	OBSTACLES = 9;
