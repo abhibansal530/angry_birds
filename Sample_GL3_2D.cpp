@@ -2,7 +2,7 @@
 #include <cmath>
 #include <fstream>
 #include <vector>
-
+#include <time.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <FTGL/ftgl.h>
 #define sq(x) ((x)*(x))
 using namespace std;
 
@@ -31,7 +32,13 @@ struct GLMatrices {
 	GLuint MatrixID;
 } Matrices;
 
-GLuint programID;
+struct FTGLFont {
+	FTFont* font;
+	GLuint fontMatrixID;
+	GLuint fontColorID;
+} GL3Font;
+
+GLuint programID,fontProgramID;
 
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -122,6 +129,25 @@ void quit(GLFWwindow *window)
 	exit(EXIT_SUCCESS);
 }
 
+glm::vec3 getRGBfromHue (int hue)
+{
+	float intp;
+	float fracp = modff(hue/60.0, &intp);
+	float x = 1.0 - abs((float)((int)intp%2)+fracp-1.0);
+
+	if (hue < 60)
+		return glm::vec3(1,x,0);
+	else if (hue < 120)
+		return glm::vec3(x,1,0);
+	else if (hue < 180)
+		return glm::vec3(0,1,x);
+	else if (hue < 240)
+		return glm::vec3(0,x,1);
+	else if (hue < 300)
+		return glm::vec3(x,0,1);
+	else
+		return glm::vec3(1,0,x);
+}
 
 /* Generate VAO, VBOs and return VAO handle */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
@@ -212,6 +238,7 @@ float s = 1;
 bool ballinsky=false;   //whether ball in sky
 float PANX = 0;
 bool MANPAN=true,firsttime=true;
+int BALLCOUNT=0;
 struct obstacle;
 obstacle *allobstacles;
 typedef struct color{
@@ -279,6 +306,7 @@ typedef struct ball{
 	void init(){
 		s=1;
 		PANX=0;
+		BALLCOUNT++;
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
 		ballinsky=isshoot=collision_ground=collision_obj=falling=power=false;
@@ -500,18 +528,20 @@ typedef struct sky{
 }sky;
 typedef struct obstacle
 {	VAO* shape;
-	glm::mat4 translate,translateagain;
+	glm::mat4 translate,translateagain,scale;
 	float w,h;   //width and height
 	float x,y,r; 
 	bool circle;     //whether circle
-	bool collision,dir,target,available; 
+	bool collision,dir,target,available;
+	int numhit;  //no. of times hitted 
 	void create(int wi,int he,color c,bool cir,bool tar){
 		available=dir=true;
 		circle=cir,target=tar;
 		collision=false;
-		translateagain=glm::mat4(1.0f);
+		translateagain=scale=glm::mat4(1.0f);
 		translate=glm::mat4(1.0f);
 		x=y=0;
+		numhit=-1;
 		
 		if(!circle){
 			w=wi,h=he;
@@ -528,7 +558,7 @@ typedef struct obstacle
 		glm::mat4 VP = Matrices.projection * Matrices.view;
 		Matrices.model = glm::mat4(1.0f);
 		 //= glm::translate(glm::vec3(500,-300,0));
-		Matrices.model*=(translateagain*translate);
+		Matrices.model*=(translateagain*translate*scale);
 		float *mv = (&Matrices.model[0][0]);
 		x =  mv[12];
 		y =  mv[13];
@@ -579,7 +609,11 @@ typedef struct obstacle
 		float d = sqrt((b.x-x)*(b.x-x) + (b.y-y)*(b.y-y));
 		//printf("D:%f R:%f r:%f\n",d,r,b.r);
 		if(d<=r+b.r&&available){
-			available=false;
+			if(numhit==-1){
+				numhit=BALLCOUNT;
+				scale = glm::scale(glm::vec3(0.5,0.5,0));
+			}
+			else if(numhit!=BALLCOUNT)available=false;
 		}	
 	}
 	void move(float vel){
@@ -1176,6 +1210,30 @@ void draw ()
 	//Matrices.model*=translateBall;
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
+
+	// // Render font on screen
+	// static int fontScale = 0;
+	// float fontScaleValue = 0.75 + 0.25*sinf(fontScale*M_PI/180.0f);
+	// glm::vec3 fontColor = getRGBfromHue (fontScale);
+
+
+
+	// // Use font Shaders for next part of code
+	// glUseProgram(fontProgramID);
+	// Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+
+	// // Transform the text
+	// Matrices.model = glm::mat4(1.0f);
+	// glm::mat4 translateText = glm::translate(glm::vec3(-3,2,0));
+	// glm::mat4 scaleText = glm::scale(glm::vec3(fontScaleValue,fontScaleValue,fontScaleValue));
+	// Matrices.model *= (translateText * scaleText);
+	// MVP = Matrices.projection * Matrices.view * Matrices.model;
+	// // send font's MVP and font color to fond shaders
+	// glUniformMatrix4fv(GL3Font.fontMatrixID, 1, GL_FALSE, &MVP[0][0]);
+	// glUniform3fv(GL3Font.fontColorID, 1, &fontColor[0]);
+
+	// // Render font
+	// GL3Font.font->Render("Round n Round we go !!");
 //	drawCircle(testball,-3.5*115-70.0,-3*115);
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
@@ -1258,6 +1316,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	gamesky.create();
 	OBSTACLES = 9;
 	allobstacles[0].create(100.0,100.0,color(1,0,0),false,false);
+	allobstacles[0].translate = glm::translate(glm::vec3(-100,0,0));
 	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);
 	allobstacles[1].translate=glm::translate(glm::vec3(100,0,0));
 	allobstacles[2].create(500,50,color(1,0,0),false,false);
@@ -1294,6 +1353,32 @@ void initGL (GLFWwindow* window, int width, int height)
 
 	glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LEQUAL);
+
+	// Initialise FTGL stuff
+	// const char* fontfile = "arial.ttf";
+	// GL3Font.font = new FTExtrudeFont(fontfile); // 3D extrude style rendering
+
+	// if(GL3Font.font->Error())
+	// {
+	// 	cout << "Error: Could not load font `" << fontfile << "'" << endl;
+	// 	glfwTerminate();
+	// 	exit(EXIT_FAILURE);
+	// }
+
+	// // Create and compile our GLSL program from the font shaders
+	// fontProgramID = LoadShaders( "fontrender.vert", "fontrender.frag" );
+	// GLint fontVertexCoordAttrib, fontVertexNormalAttrib, fontVertexOffsetUniform;
+	// fontVertexCoordAttrib = glGetAttribLocation(fontProgramID, "vertexPosition");
+	// fontVertexNormalAttrib = glGetAttribLocation(fontProgramID, "vertexNormal");
+	// fontVertexOffsetUniform = glGetUniformLocation(fontProgramID, "pen");
+	// GL3Font.fontMatrixID = glGetUniformLocation(fontProgramID, "MVP");
+	// GL3Font.fontColorID = glGetUniformLocation(fontProgramID, "fontColor");
+
+	// GL3Font.font->ShaderLocations(fontVertexCoordAttrib, fontVertexNormalAttrib, fontVertexOffsetUniform);
+	// GL3Font.font->FaceSize(1);
+	// GL3Font.font->Depth(0);
+	// GL3Font.font->Outset(0, 0);
+	// GL3Font.font->CharMap(ft_encoding_unicode);
 
 	cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
 	cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
