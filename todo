@@ -1,4 +1,5 @@
+ground collision              //one way to check time spent on ground
+ball sticking on obstacles
 change color of power balls
-ground collision
 improve obstacle collison
 scale obstacle translate

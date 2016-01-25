@@ -398,7 +398,7 @@ typedef struct ball{
 		//printf("in shoot velx:%f vely:%f\n",velx,vely);
 	}
 	void fire(float s){
-		if(x>=1300||x<-650){
+		if(x>=1300||x<-650){       //ball out of window
 			init();
 			return;
 		}
@@ -439,9 +439,11 @@ typedef struct ball{
 } ball;
 
 typedef struct ground
-{
+{	
+	double lasttime;
 	VAO *shape;
 	void create(){
+		lasttime = double(-10e5);
 		GLfloat vbd[]={
 			-650,-500,0,
 			1300,-500,0,
@@ -473,16 +475,15 @@ typedef struct ground
 	void checkCollision(ball &b){
 		float alpha=0.5,ang,beta=0.5;
 		if(b.onground()&&b.falling&&!b.collision_ground){
-			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||b.y<-301){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
+			printf("delta %lf\n",glfwGetTime()-lasttime );
+			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(glfwGetTime()-lasttime<=0.05)){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
 				printf("at rest in ground\n");
 				b.init();
 				printf("new vel %f\n",b.vel);
 				s=1;
-				// b.isshoot=ballinsky=false;
-				// b.sx=b.sy=0;
-				// b.collision_ground=false;
 				return;
 			}
+			lasttime=glfwGetTime();
 			printf("collided ground x:%f y:%f \n",b.x,b.y);
 			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
