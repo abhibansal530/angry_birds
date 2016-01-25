@@ -747,8 +747,6 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 
 				}
 				break;
-				// do something ..
-				break;
 			case GLFW_KEY_SPACE:
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
@@ -759,6 +757,37 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 					my.shootpower=true;
 					MANPAN=false;  
 				}
+				break;
+			case GLFW_KEY_1:
+				if(my.shootpower){
+					my.power=true;
+					testpow.inx = my.x;
+					testpow.iny = my.y;
+					testpow.inti=glfwGetTime();
+					my.shootpower=false;
+				}
+				break;
+			case GLFW_KEY_2:
+				if(my.shootpower){
+					my.sx+=150.0*cos(atan(my.vely/my.velx));
+					my.sy+=150.0*sin(atan(my.vely/my.velx));
+					my.shootpower=false;
+				}
+				break;
+			case GLFW_KEY_3:
+				if(my.isshoot&&my.shootpower){
+					for(int i=0;i<1;++i){
+						printf("myx:%f myy:%f\n",my.x,my.y);
+						testball[i].sx=my.x-STX;
+						testball[i].sy=my.y-STY;
+						testball[i].stx=STX;
+						testball[i].sty=STY;
+						testball[i].vel=400;
+						testball[i].shoot(atan(my.vely/my.velx));
+					}
+					
+				}
+				my.shootpower=false;
 				break;
 			default:
 				break;
