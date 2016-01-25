@@ -744,7 +744,10 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 	if (action == GLFW_RELEASE) {
 		switch (key) {
 			case GLFW_KEY_C:
-				ZOOM*=10;
+				ZOOM/=2;
+				break;
+			case GLFW_KEY_Z:
+				ZOOM*=2;
 				break;
 			case GLFW_KEY_P:
 				triangle_rot_status = !triangle_rot_status;
@@ -1400,7 +1403,7 @@ int main (int argc, char** argv)
 
 	/* Draw in loop */
 	while (!glfwWindowShouldClose(window)) {
-
+		reshapeWindow(window,width,height);        //handle zoom
 		// OpenGL Draw commands
 		draw();
 		clearcollisions(my);
