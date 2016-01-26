@@ -854,13 +854,22 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 			break;
 	}
 }
-//mouse cursor callback
+//mouse cursorPosition callback
 void poscallback(GLFWwindow* window,double xp,double yp){
 	double lx,ly;
 	ly=1000.0/2.0 + 3.5*115-yp;
 	lx=xp-1300.0/2.0+3.5*115;
 	pipe_rot=-1.0*atan(lx/ly)*180.0f/M_PI;
-	//printf("lx:%lf ly:%lf\n",lx,ly);
+}
+//mouse scroll-bar callback
+double currentYoffset=0;
+void scrollcallback(GLFWwindow* window,double xoffset,double yoffset){
+	//printf("yoff:%lf\n",yoffset);
+	currentYoffset+=yoffset;
+	if(currentYoffset>0)ZOOM = ZOOM /(2*currentYoffset);
+	else if(currentYoffset==0)ZOOM=1;
+	else ZOOM = ZOOM = ZOOM*2*abs(currentYoffset);
+	//ZOOM/=yoffset;
 }
 /* Executed when window is resized to 'width' and 'height' */
 /* Modify the bounds of the screen here in glm::ortho or Field of View in glm::Perspective */
@@ -1251,6 +1260,7 @@ GLFWwindow* initGLFW (int width, int height)
 
 	glfwSetCursor(window, cursor);
 	glfwSetCursorPosCallback(window,poscallback);
+	glfwSetScrollCallback(window,scrollcallback);
 	return window;
 }
 void initlife(){
