@@ -611,11 +611,12 @@ typedef struct obstacle
 	}
 	void hit(ball b){
 		float d = sqrt((b.x-x)*(b.x-x) + (b.y-y)*(b.y-y));
-		//printf("D:%f R:%f r:%f\n",d,r,b.r);
+		float s=0.5;
 		if(d<=r+b.r&&available){
 			if(numhit==-1){
 				numhit=BALLCOUNT;
-				scale = glm::scale(glm::vec3(0.5,0.5,0));
+				scale = glm::scale(glm::vec3(s,s,0));
+				r*=s;
 			}
 			else if(numhit!=BALLCOUNT)available=false;
 		}	
@@ -748,53 +749,21 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 
 	if (action == GLFW_RELEASE) {
 		switch (key) {
-			case GLFW_KEY_C:
+			case GLFW_KEY_UP:
 				ZOOM/=2;
 				break;
-			case GLFW_KEY_Z:
+			case GLFW_KEY_DOWN:
 				ZOOM*=2;
 				break;
 			case GLFW_KEY_P:
 				triangle_rot_status = !triangle_rot_status;
 				break;
-			case GLFW_KEY_X:
-				if(my.shootpower){
-					if(testpow.type==1){
-						my.power=true;
-						testpow.inx = my.x;
-						testpow.iny = my.y;
-						testpow.inti=glfwGetTime();
-						my.shootpower=false;
-					}
-					else if(testpow.type==2){
-						float ang=atan(my.vely/my.velx);
-						float r = 150;
-						my.sx+=r*cos(ang);
-						my.sy+=r*sin(ang);
-						my.shootpower=false;
-
-					}
-					else if(testpow.type==3&&my.isshoot){
-						for(int i=0;i<1;++i){
-							printf("myx:%f myy:%f\n",my.x,my.y);
-							powerball[i].sx=my.x-STX;
-							powerball[i].sy=my.y-STY;
-							powerball[i].stx=STX;
-							powerball[i].sty=STY;
-							powerball[i].vel=400;
-							powerball[i].shoot(atan(my.vely/my.velx));
-						}
-						my.shootpower=false;
-					}
-
-				}
-				break;
+			
 			case GLFW_KEY_SPACE:
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
 				if(!ballinsky&&LIFES>0){
 					s=1;
-					//my.vel=500.0;        //rather create a init function
 					my.shoot(ang);           
 					my.shootpower=true;
 					MANPAN=false;
@@ -906,7 +875,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 	GLfloat fov = 90.0f;
 
 	// sets the viewport of openGL renderer
-	glViewport (0, 0, (GLsizei) fbwidth+add, (GLsizei) fbheight + add);
+	glViewport (0, 0, (GLsizei) fbwidth+add, (GLsizei) fbheight);
 
 	// set the projection matrix as perspective
 	/* glMatrixMode (GL_PROJECTION);
@@ -1291,25 +1260,31 @@ void initObjects(){           //improve
 		for(int i=0;i<2;++i)powerball[i].create(color(0.309,0.047,0.96));
 	gameground.create();
 	gamesky.create();
-	OBSTACLES = 9;
-	allobstacles[0].create(100.0,100.0,color(1,0,0),false,false);
+	OBSTACLES = 12;
+	allobstacles[0].create(50.0,200.0,color(1,0,0),false,false);      //movable
 	allobstacles[0].translate = glm::translate(glm::vec3(-100,0,0));
-	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);
+	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);        //movable
 	allobstacles[1].translate=glm::translate(glm::vec3(100,0,0));
-	allobstacles[2].create(500,50,color(1,0,0),false,false);
+	allobstacles[2].create(400,50,color(1,0,0),false,false);          //floor 0
 	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
 	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[3].translate = glm::translate(glm::vec3(500,-225,0));
+	allobstacles[3].translate = glm::translate(glm::vec3(550,-300+25+allobstacles[3].r,0));
 	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[4].translate = glm::translate(glm::vec3(700,-225,0));
-	allobstacles[5].create(500,50,color(1,0,0),false,false);
-	allobstacles[5].translate=glm::translate(glm::vec3(700,-50,0));
+	allobstacles[4].translate = glm::translate(glm::vec3(800,-225,0));
+	allobstacles[5].create(150,50,color(1,0,0),false,false);            //floor 1
+	allobstacles[5].translate = glm::translate(glm::vec3(950,-150,0));
 	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[6].translate = glm::translate(glm::vec3(700,75-50,0));
-	allobstacles[7].create(500,50,color(1,0,0),false,false);
-	allobstacles[7].translate=glm::translate(glm::vec3(700,150,0));
+	allobstacles[6].translate = glm::translate(glm::vec3(950,-75,0));
+	allobstacles[7].create(150,50,color(1,0,0),false,false);              //floor 2
+	allobstacles[7].translate=glm::translate(glm::vec3(700,-50,0));
 	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
+	allobstacles[8].translate = glm::translate(glm::vec3(700,75-50,0));
+	allobstacles[9].create(400,50,color(1,0,0),false,false);               //floor 3
+	allobstacles[9].translate=glm::translate(glm::vec3(800,150,0));
+	allobstacles[10].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[10].translate = glm::translate(glm::vec3(700,225,0));
+	allobstacles[11].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[11].translate = glm::translate(glm::vec3(950,225,0));
 	//powerball = createCircle(15,color(0,0,1));
 	testpow.create(10.0,3);
 	createPipe();
