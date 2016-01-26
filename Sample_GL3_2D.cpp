@@ -577,29 +577,32 @@ typedef struct obstacle
 	void checkCollision(ball &b){
 		float delta=10.0,alpha;
 		if(b.x>=x-w/2.0-b.r-delta&&b.x<=x+w/2.0+b.r+delta&&b.y>=y-h/2.0-b.r-delta&&b.y<=y+h/2.0+b.r+delta&&!collision&&b.isshoot){
+			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0){
+				return;
+			}
 			float ang;
-			printf("obscollided x:%f y:%f ang:%f\n",b.x,b.y,atan(b.vely/b.velx));
+			//printf("obscollided x:%f y:%f ang:%f\n",b.x,b.y,atan(b.vely/b.velx));
 			collision=true;
 			for(int i=0;i<2;++i){
 				if(allobstacles[i].x!=x&&allobstacles[i].y!=y){
 					allobstacles[i].collision=false;            //set collision with other obstacles as false
-					printf("entered %f %f\n",x,y);
+			//		printf("entered %f %f\n",x,y);
 				}
 			}
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 			if(b.x<=x-w/2.0){                     //left
-				printf("left velx:%f vely:%f\n",b.velx,b.vely);
+			//	printf("left velx:%f vely:%f\n",b.velx,b.vely);
 				float tmp = atan(b.velx/abs(b.vely));
 				ang = M_PI/2.0 + tmp;
 				if(b.vely<0)ang*=-1.0;
 			}
 			else if(b.vely>0){
-				printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
+			//	printf("bottom velx:%f vely:%f\n",b.velx,b.vely);
 				ang = -1.0*atan(b.vely/b.velx);
 				//ang = -1.0*M_PI/4.0;
 			}
 			else if(b.vely<0){
-				printf("top collision\n");
+			//	printf("top collision\n");
 				ang = atan(abs(b.vely)/b.velx);
 			}
 			b.vel = (b.velx*b.velx + b.vely*b.vely)/600;
@@ -728,14 +731,15 @@ void handleCollisionRect(ball &b,obstacle &o){
 	b.shoot(ang);
 }
 ball my;
-ball testball[3];
+ball powerball[3];
 ground gameground;
 sky gamesky;
 obstacle test,test2;
 power testpow;
 float ang,ZOOM=1.0;
 float add = 0;
-int OBSTACLES=0;
+int OBSTACLES=0,LIFES=5;
+VAO* life[10];
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -773,12 +777,12 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 					else if(testpow.type==3&&my.isshoot){
 						for(int i=0;i<1;++i){
 							printf("myx:%f myy:%f\n",my.x,my.y);
-							testball[i].sx=my.x-STX;
-							testball[i].sy=my.y-STY;
-							testball[i].stx=STX;
-							testball[i].sty=STY;
-							testball[i].vel=400;
-							testball[i].shoot(atan(my.vely/my.velx));
+							powerball[i].sx=my.x-STX;
+							powerball[i].sy=my.y-STY;
+							powerball[i].stx=STX;
+							powerball[i].sty=STY;
+							powerball[i].vel=400;
+							powerball[i].shoot(atan(my.vely/my.velx));
 						}
 						my.shootpower=false;
 					}
@@ -788,12 +792,13 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_SPACE:
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
 				ang = 0.5*M_PI - ang;
-				if(!ballinsky){
+				if(!ballinsky&&LIFES>0){
 					s=1;
 					//my.vel=500.0;        //rather create a init function
 					my.shoot(ang);           
 					my.shootpower=true;
-					MANPAN=false;  
+					MANPAN=false;
+					LIFES--;  
 				}
 				break;
 			case GLFW_KEY_1:
@@ -816,13 +821,13 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				if(my.isshoot&&my.shootpower){
 					for(int i=0;i<2;++i){
 						printf("myx:%f myy:%f\n",my.x,my.y);
-						testball[i].sx=my.x-STX;
-						testball[i].sy=my.y-STY;
-						testball[i].stx=STX;
-						testball[i].sty=STY;
-						testball[i].vel=200;
-						if(i==0)testball[i].shoot(atan(my.vely/my.velx));
-						else testball[i].shoot(-1*atan(my.vely/my.velx));
+						powerball[i].sx=my.x-STX;
+						powerball[i].sy=my.y-STY;
+						powerball[i].stx=STX;
+						powerball[i].sty=STY;
+						powerball[i].vel=200;
+						if(i==0)powerball[i].shoot(atan(my.vely/my.velx));
+						else powerball[i].shoot(-1*atan(my.vely/my.velx));
 					}
 					
 				}
@@ -941,33 +946,6 @@ void createTriangle ()
 	triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
 }
 
-// Creates the rectangle object used in this sample code
-// void createRectangle ()
-// {
-// 	// GL3 accepts only Triangles. Quads are not supported
-// 	static const GLfloat vertex_buffer_data [] = {
-// 		-2,-1,0, // vertex 1
-// 		2,-1,0, // vertex 2
-// 		2, 1,0, // vertex 3
-
-// 		2, 1,0, // vertex 3
-// 		-2, 1,0, // vertex 4
-// 		-2,-1,0  // vertex 1
-// 	};
-
-// 	static const GLfloat color_buffer_data [] = {
-// 		0.647059,0.164706,0.164706, // color 1
-// 		0.647059,0.164706,0.164706, // color 2
-// 		0.647059,0.164706,0.164706, // color 3
-
-// 		0.647059,0.164706,0.164706, // color 3
-// 		0.647059,0.164706,0.164706, // color 4
-// 		0.647059,0.164706,0.164706  // color 1
-// 	};
-
-// 	// create3DObject creates and returns a handle to a VAO that can be used later
-// 	rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
-// }
 
 void createBox()
 {
@@ -1067,7 +1045,7 @@ void createShape(){
 		}
 	shape = create3DObject(GL_POINTS,2*v,vbd,cbd,GL_FILL);
 }
-void clearcollisions(ball b){
+void clearcollisions(ball b){    //while colliding with an object clear collisions
 	float delta = 10.0;
 	for (int i = 0; i < OBSTACLES; ++i)
 	{	float x=allobstacles[i].x;
@@ -1172,12 +1150,13 @@ void draw ()
 	MVP = VP*Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID,1,GL_FALSE,&MVP[0][0]);
 	draw3DObject(spring);	
-	// Increment angles
-	//  float increments = 1;
-	//pipe_rot+=1;
-	//my.draw(0,0.25+0.01+0.15);
+	
+	for(int i=0;i<LIFES;++i){
+		drawCircle(life[i],-620+35*i,480);
+	}
+
 	gameground.checkCollision(my);
-	for(int j=0;j<2;++j)gameground.checkCollision(testball[j]);  //check with other(power) balls
+	for(int j=0;j<2;++j)gameground.checkCollision(powerball[j]);  //check with other(power) balls
 	// for(int i=0;i<OBSTACLES;++i){
 	// 	if(!allobstacles[i].target)allobstacles[i].checkCollision(my);
 	// 	else allobstacles[i].hit(my);
@@ -1189,8 +1168,8 @@ void draw ()
 	if(!my.isshoot)my.draw(0,25+10+15,s);
 	else my.fire(s);
 	for(int i=0;i<2;++i){
-		if(testball[i].isshoot){
-			testball[i].fire(s);
+		if(powerball[i].isshoot){
+			powerball[i].fire(s);
 			printf("%d ball fired\n",i+1);
 		}
 	}
@@ -1202,11 +1181,11 @@ void draw ()
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target){
 			allobstacles[i].checkCollision(my);       //with main ball
-			for(int j=0;j<2;++j)allobstacles[i].checkCollision(testball[j]);  //with power balls
+			for(int j=0;j<2;++j)allobstacles[i].checkCollision(powerball[j]);  //with power balls
 		}
 		else {
 			allobstacles[i].hit(my);                    //main ball
-			for(int j=0;j<2;++j)allobstacles[i].hit(testball[j]);       //power balls
+			for(int j=0;j<2;++j)allobstacles[i].hit(powerball[j]);       //power balls
 		}
 	}
 	//printf("ang: %f\n",ang);
@@ -1239,7 +1218,7 @@ void draw ()
 
 	// // Render font
 	// GL3Font.font->Render("Round n Round we go !!");
-//	drawCircle(testball,-3.5*115-70.0,-3*115);
+//	drawCircle(powerball,-3.5*115-70.0,-3*115);
 	//my.move(-1.8+2*sin(ang),-2+2*cos(ang));
 	//printf("%f %f\n",my.x,my.y);
 	//draw3DObject(shape);
@@ -1302,20 +1281,14 @@ GLFWwindow* initGLFW (int width, int height)
 
 	return window;
 }
-
-/* Initialize the OpenGL rendering properties */
-/* Add all the models to be created here */
-void initGL (GLFWwindow* window, int width, int height)
-{
-	/* Objects should be created before any other gl function and shaders */
-	// Create the models
-	//	createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
-	circle = createCircle(0.5*100,color(1,0,0));
-	//createRectangle();
+void initlife(){
+	for(int i=0;i<5;++i)life[i]=createCircle(15,color(0,0,1));
+}
+void initObjects(){           //improve
 	my.x=my.y=0,my.r=0.15*100;
 	my.create();
-	for(int i=0;i<2;++i)testball[i].r=15;
-		for(int i=0;i<2;++i)testball[i].create();
+	for(int i=0;i<2;++i)powerball[i].r=15;
+		for(int i=0;i<2;++i)powerball[i].create();
 	gameground.create();
 	gamesky.create();
 	OBSTACLES = 9;
@@ -1337,11 +1310,23 @@ void initGL (GLFWwindow* window, int width, int height)
 	allobstacles[7].translate=glm::translate(glm::vec3(700,150,0));
 	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
 	allobstacles[8].translate = glm::translate(glm::vec3(700,225,0));
-	//testball = createCircle(15,color(0,0,1));
+	//powerball = createCircle(15,color(0,0,1));
 	testpow.create(10.0,3);
-	//createBox();
 	createPipe();
 	createSpring();
+}
+/* Initialize the OpenGL rendering properties */
+/* Add all the models to be created here */
+void initGL (GLFWwindow* window, int width, int height)
+{
+	/* Objects should be created before any other gl function and shaders */
+	// Create the models
+	//	createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
+	circle = createCircle(0.5*100,color(1,0,0));      //canon
+	initObjects();
+	initlife();
+	//createRectangle();
+	
 	//createShape();
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
