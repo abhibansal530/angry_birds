@@ -617,12 +617,11 @@ typedef struct obstacle
 				numhit=BALLCOUNT;
 				scale = glm::scale(glm::vec3(s,s,0));
 				r*=s;
-				SCORE+=10;
 			}
 			else if(numhit!=BALLCOUNT){
-				available=false;
 				SCORE+=10;
 				TARGETS--;
+				available=false;
 			}
 		}	
 	}
@@ -1406,15 +1405,15 @@ int main (int argc, char** argv)
 		// Swap Frame Buffer in double buffering
 		glfwSwapBuffers(window);
 
-		if(TARGETS==0)SCORE+=50*LIFES;
-		
 		// Poll for Keyboard and mouse events
 		glfwPollEvents();
 		if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS)pipe_rot+=1;
 		if(glfwGetKey(window,GLFW_KEY_B)==GLFW_PRESS)pipe_rot-=1;
-
-		printf("SCORE: %d\n",SCORE);
 		
+		if(TARGETS==0)SCORE+=50*LIFES;  //To check if all targets shooted
+
+		printf("Score: %d\n",SCORE);
+
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
@@ -1425,7 +1424,7 @@ int main (int argc, char** argv)
 			// lx=xp-width/2.0+abs(my.x);
 			// //printf("lx:%lf ly:%lf\n",lx,ly );
 			// pipe_rot=M_PI/2.0+atan(ly/lx)*180.0f/M_PI;
-			
+
 			allobstacles[0].move(1.0);
 			allobstacles[1].move(2.0);
 			if(glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)==GLFW_PRESS){
