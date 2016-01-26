@@ -241,6 +241,7 @@ bool MANPAN=true,firsttime=true;
 int BALLCOUNT=0;
 struct obstacle;
 obstacle *allobstacles;
+void translateTargets();
 typedef struct color{
 	float r,g,b;
 	color(float r,float g,float b):
@@ -1083,6 +1084,7 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
+	translateTargets();
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target||(allobstacles[i].target&&allobstacles[i].available))
 			allobstacles[i].draw();
@@ -1253,6 +1255,44 @@ GLFWwindow* initGLFW (int width, int height)
 void initlife(){
 	for(int i=0;i<5;++i)life[i]=createCircle(15,color(0,0,1));
 }
+
+void createFloors(){
+	allobstacles[2].create(400,50,color(1,0,0),false,false);          //floor 0
+	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
+
+	allobstacles[5].create(150,50,color(1,0,0),false,false);            //floor 1
+	allobstacles[5].translate = glm::translate(glm::vec3(950,-150,0));
+	allobstacles[7].create(150,50,color(1,0,0),false,false);              //floor 2
+	allobstacles[7].translate=glm::translate(glm::vec3(700,-50,0));
+
+	allobstacles[9].create(400,50,color(1,0,0),false,false);               //floor 3
+	allobstacles[9].translate=glm::translate(glm::vec3(800,150,0));
+}
+void createTargets(){
+	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
+
+	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
+
+	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
+
+	allobstacles[10].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[11].create(50.0,50.0,color(0,1,0),true,true);
+}
+void translateTargets(){
+	allobstacles[3].translate = glm::translate(glm::vec3(550,-300+25+allobstacles[3].r,0));  //floor 0
+	allobstacles[4].translate = glm::translate(glm::vec3(800,-300+25+allobstacles[4].r,0));  //floor 0
+
+	allobstacles[6].translate = glm::translate(glm::vec3(950,-150+25+allobstacles[6].r,0));  //floor 1
+
+	allobstacles[8].translate = glm::translate(glm::vec3(700,-50+25+allobstacles[8].r,0));   //floor 2
+
+	allobstacles[10].translate = glm::translate(glm::vec3(700,150+25+allobstacles[10].r,0));  //floor 3
+	allobstacles[11].translate = glm::translate(glm::vec3(950,150+25+allobstacles[11].r,0));  //floor 3
+
+
+
+}
 void initObjects(){           //improve
 	my.x=my.y=0,my.r=0.15*100;
 	my.create(color(0,0,1));
@@ -1261,31 +1301,14 @@ void initObjects(){           //improve
 	gameground.create();
 	gamesky.create();
 	OBSTACLES = 12;
+	float r = 50;
+	createFloors();
+	createTargets();
+	//translateTargets();
 	allobstacles[0].create(50.0,200.0,color(1,0,0),false,false);      //movable
 	allobstacles[0].translate = glm::translate(glm::vec3(-100,0,0));
 	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);        //movable
 	allobstacles[1].translate=glm::translate(glm::vec3(100,0,0));
-	allobstacles[2].create(400,50,color(1,0,0),false,false);          //floor 0
-	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
-	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[3].translate = glm::translate(glm::vec3(550,-300+25+allobstacles[3].r,0));
-	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[4].translate = glm::translate(glm::vec3(800,-225,0));
-	allobstacles[5].create(150,50,color(1,0,0),false,false);            //floor 1
-	allobstacles[5].translate = glm::translate(glm::vec3(950,-150,0));
-	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[6].translate = glm::translate(glm::vec3(950,-75,0));
-	allobstacles[7].create(150,50,color(1,0,0),false,false);              //floor 2
-	allobstacles[7].translate=glm::translate(glm::vec3(700,-50,0));
-	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[8].translate = glm::translate(glm::vec3(700,75-50,0));
-	allobstacles[9].create(400,50,color(1,0,0),false,false);               //floor 3
-	allobstacles[9].translate=glm::translate(glm::vec3(800,150,0));
-	allobstacles[10].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[10].translate = glm::translate(glm::vec3(700,225,0));
-	allobstacles[11].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[11].translate = glm::translate(glm::vec3(950,225,0));
-	//powerball = createCircle(15,color(0,0,1));
 	testpow.create(10.0,3);
 	createPipe();
 	createSpring();
