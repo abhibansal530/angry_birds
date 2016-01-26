@@ -315,7 +315,7 @@ typedef struct ball{
 		vel = 400;
 		k=1.01;
 	} 
-	void create(){
+	void create(color c){
 		project = glm::mat4(1.0f);
 		translate = glm::mat4(1.0f);
 		collision_ground=collision_obj=falling=power=false;
@@ -324,7 +324,7 @@ typedef struct ball{
 		vel = 400;
 		k=1.01;
 		//k=1+0.01/2.0;  //change k acc. to spring length
-		circle = createCircle(r,color(0,0,1));
+		circle = createCircle(r,c);
 		return;	
 	}
 	bool onground(){
@@ -655,7 +655,7 @@ typedef struct power{       //singleton,only one instance needed
 		type=ty;
 		r = ra;
 		available=true;
-		circle = createCircle(r,color(1,1,1));
+		circle = createCircle(r,color(0,0,0));
 		return;	
 	}
 	void draw(){
@@ -825,7 +825,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						powerball[i].sy=my.y-STY;
 						powerball[i].stx=STX;
 						powerball[i].sty=STY;
-						powerball[i].vel=200;
+						powerball[i].vel=300;
 						if(i==0)powerball[i].shoot(atan(my.vely/my.velx));
 						else powerball[i].shoot(-1*atan(my.vely/my.velx));
 					}
@@ -1286,9 +1286,9 @@ void initlife(){
 }
 void initObjects(){           //improve
 	my.x=my.y=0,my.r=0.15*100;
-	my.create();
+	my.create(color(0,0,1));
 	for(int i=0;i<2;++i)powerball[i].r=15;
-		for(int i=0;i<2;++i)powerball[i].create();
+		for(int i=0;i<2;++i)powerball[i].create(color(0.309,0.047,0.96));
 	gameground.create();
 	gamesky.create();
 	OBSTACLES = 9;
