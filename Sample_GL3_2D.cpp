@@ -474,7 +474,7 @@ typedef struct ground
 		draw3DObject(shape);
 	}
 	void checkCollision(ball &b){
-		float alpha=0.5,ang,beta=0.5;
+		float alpha=0.8,ang,beta=0.8;
 		if(b.onground()&&b.falling&&!b.collision_ground){
 			printf("delta %lf\n",glfwGetTime()-lasttime );
 			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(glfwGetTime()-lasttime<=0.5)||(b.velx<=0&&abs(b.velx)<=0.1&&b.vely<0&&abs(b.vely)>=10)){    //ball came to rest (if time diff b/w two arrivals <=0.5 init())
@@ -578,7 +578,7 @@ typedef struct obstacle
 	void checkCollision(ball &b){
 		float delta=10.0,alpha;
 		if(b.x>=x-w/2.0-b.r-delta&&b.x<=x+w/2.0+b.r+delta&&b.y>=y-h/2.0-b.r-delta&&b.y<=y+h/2.0+b.r+delta&&!collision&&b.isshoot){
-			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0){
+			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(b.velx<=0&&abs(b.velx)<=0.1&&b.vely<0&&abs(b.vely)>=10)){
 				return;
 			}
 			float ang;
@@ -1084,7 +1084,7 @@ void draw ()
 	// glPopMatrix ();
 	gameground.draw();
 	gamesky.draw();
-	translateTargets();
+	translateTargets();               //to scale and translate targets
 	for(int i=0;i<OBSTACLES;++i){
 		if(!allobstacles[i].target||(allobstacles[i].target&&allobstacles[i].available))
 			allobstacles[i].draw();
@@ -1136,7 +1136,7 @@ void draw ()
 	// allobstacles[1].checkCollision(my);
 	
 	float ang = pipe_rot*M_PI/180.0f;
-	if(!my.isshoot)my.draw(0,25+10+15,s);
+	if(!my.isshoot&&LIFES>0)my.draw(0,25+10+15,s);
 	else my.fire(s);
 	for(int i=0;i<2;++i){
 		if(powerball[i].isshoot){
