@@ -238,7 +238,7 @@ float s = 1;
 bool ballinsky=false;   //whether ball in sky
 float PANX = 0;
 bool MANPAN=true,firsttime=true;
-int BALLCOUNT=0;
+int BALLCOUNT=0,LIFES=5;
 struct obstacle;
 obstacle *allobstacles;
 void translateTargets();
@@ -740,7 +740,7 @@ obstacle test,test2;
 power testpow;
 float ang,ZOOM=1.0;
 float add = 0;
-int OBSTACLES=0,LIFES=5;
+int OBSTACLES=0;
 VAO* life[10];
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -1268,27 +1268,27 @@ void initlife(){
 }
 
 void createFloors(){
-	allobstacles[2].create(400,50,color(1,0,0),false,false);          //floor 0
+	allobstacles[2].create(400,50,color(0.5,0.2,0.0),false,false);          //floor 0
 	allobstacles[2].translate=glm::translate(glm::vec3(700,-300,0));
 
-	allobstacles[5].create(150,50,color(1,0,0),false,false);            //floor 1
+	allobstacles[5].create(150,50,color(0.5,0.2,0.0),false,false);            //floor 1
 	allobstacles[5].translate = glm::translate(glm::vec3(950,-150,0));
-	allobstacles[7].create(150,50,color(1,0,0),false,false);              //floor 2
+	allobstacles[7].create(150,50,color(0.5,0.2,0.0),false,false);              //floor 2
 	allobstacles[7].translate=glm::translate(glm::vec3(700,-50,0));
 
-	allobstacles[9].create(400,50,color(1,0,0),false,false);               //floor 3
+	allobstacles[9].create(400,50,color(0.5,0.2,0.0),false,false);               //floor 3
 	allobstacles[9].translate=glm::translate(glm::vec3(800,150,0));
 }
 void createTargets(){
-	allobstacles[3].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[4].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[3].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
+	allobstacles[4].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
 
-	allobstacles[6].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[6].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
 
-	allobstacles[8].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[8].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
 
-	allobstacles[10].create(50.0,50.0,color(0,1,0),true,true);
-	allobstacles[11].create(50.0,50.0,color(0,1,0),true,true);
+	allobstacles[10].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
+	allobstacles[11].create(50.0,50.0,color(0.9607,0.5529,0.1137),true,true);
 }
 void translateTargets(){
 	allobstacles[3].translate = glm::translate(glm::vec3(550,-300+25+allobstacles[3].r,0));  //floor 0
@@ -1316,9 +1316,9 @@ void initObjects(){           //improve
 	createFloors();
 	createTargets();
 	//translateTargets();
-	allobstacles[0].create(50.0,200.0,color(1,0,0),false,false);      //movable
+	allobstacles[0].create(50.0,200.0,color(0.7,0.1,0.0),false,false);      //movable
 	allobstacles[0].translate = glm::translate(glm::vec3(-100,0,0));
-	allobstacles[1].create(100.0,100.0,color(0,1,0),false,false);        //movable
+	allobstacles[1].create(50.0,200.0,color(0.7,0.1,0.0),false,false);        //movable
 	allobstacles[1].translate=glm::translate(glm::vec3(100,0,0));
 	testpow.create(10.0,3);
 	createPipe();
