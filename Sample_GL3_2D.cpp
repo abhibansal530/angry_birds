@@ -1388,6 +1388,7 @@ int main (int argc, char** argv)
 {
 	int width = 1300;
 	int height = 1000;
+	int MOUSEPRESSED=0;
 	float tmp=0;
 	allobstacles = new obstacle[20];
 	GLFWwindow* window = initGLFW(width, height);
@@ -1410,7 +1411,7 @@ int main (int argc, char** argv)
 		glfwPollEvents();
 		if(glfwGetKey(window,GLFW_KEY_J)==GLFW_PRESS)pipe_rot+=1;
 		if(glfwGetKey(window,GLFW_KEY_L)==GLFW_PRESS)pipe_rot-=1;
-		//if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS)s*=0.9;
+		
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
@@ -1424,6 +1425,29 @@ int main (int argc, char** argv)
 
 			allobstacles[0].move(1.0);
 			allobstacles[1].move(2.0);
+			if(glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)==GLFW_PRESS){
+				//printf("left button pressed\n");
+				s*=0.99;
+				if(!my.isshoot)my.vel*=my.k;
+				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
+				MOUSEPRESSED=1;
+			}
+			if(glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)==GLFW_RELEASE){
+				//printf("left button released\n");
+				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
+				ang = 0.5*M_PI - ang;
+				if(!ballinsky&&LIFES>0&&MOUSEPRESSED){
+					s=1;
+					my.shoot(ang);           
+					my.shootpower=true;
+					MANPAN=false;
+					LIFES--;
+					MOUSEPRESSED=0;  
+				}
+				// s*=0.99;
+				// if(!my.isshoot)my.vel*=my.k;
+				// my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
+			}
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
 				if(PANX>0&&MANPAN)PANX-=10.0;
 			}
