@@ -843,15 +843,7 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
 	switch (button) {
 		case GLFW_MOUSE_BUTTON_LEFT:
-			if (action == GLFW_RELEASE){
-				double xp,yp;
-				glfwGetCursorPos(window,&xp,&yp);
-				yp = 500.f-yp;
-				xp=xp-650.f;
-				printf("xp:%lf yp:%lf\n",xp,yp);
-				pipe_rot = atan(yp/xp)*180.f/M_PI;
-				printf("pipe_rot:%f\n",pipe_rot);
-			}
+			
 			break;
 		case GLFW_MOUSE_BUTTON_RIGHT:
 			if (action == GLFW_RELEASE) {
@@ -862,8 +854,14 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 			break;
 	}
 }
-
-
+//mouse cursor callback
+void poscallback(GLFWwindow* window,double xp,double yp){
+	double lx,ly;
+	ly=1000.0/2.0 + 3.5*115-yp;
+	lx=xp-1300.0/2.0+3.5*115;
+	pipe_rot=-1.0*atan(lx/ly)*180.0f/M_PI;
+	//printf("lx:%lf ly:%lf\n",lx,ly);
+}
 /* Executed when window is resized to 'width' and 'height' */
 /* Modify the bounds of the screen here in glm::ortho or Field of View in glm::Perspective */
 void reshapeWindow (GLFWwindow* window, int width, int height)
@@ -1249,7 +1247,10 @@ GLFWwindow* initGLFW (int width, int height)
 
 	/* Register function to handle mouse click */
 	glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
+	GLFWcursor* cursor = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
 
+	glfwSetCursor(window, cursor);
+	glfwSetCursorPosCallback(window,poscallback);
 	return window;
 }
 void initlife(){
@@ -1404,20 +1405,13 @@ int main (int argc, char** argv)
 		current_time = glfwGetTime(); // Time in seconds
 		if ((current_time - last_update_time) >= 10e-9) { // atleast 0.5s elapsed since last frame
 			// do something every 0.5 seconds ..
-				// if(current_time - last_update_time >=0.001)
-				// {
-				// 	if(checkCollisionRect(my,test)){
-				// 		handleCollisionRect(my,test);
-				// 	}
-				// 	if(checkCollisionCircle(my,test2)){
-				// 		handleCollisionCircle(my,test2);
-				// 	}
-				// }
-			// double xp,yp;
+			// double xp,yp,lx,ly;
 			// glfwGetCursorPos(window,&xp,&yp);
-			// xp-=650,yp=500-yp;
-			//printf("xp:%f yp:%f\n",xp,yp);
-			//pipe_rot=atan(yp/xp)*180.0f/M_PI;
+			// ly=height/2.0 + abs(my.y)-yp;
+			// lx=xp-width/2.0+abs(my.x);
+			// //printf("lx:%lf ly:%lf\n",lx,ly );
+			// pipe_rot=M_PI/2.0+atan(ly/lx)*180.0f/M_PI;
+
 			allobstacles[0].move(1.0);
 			allobstacles[1].move(2.0);
 			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
