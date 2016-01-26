@@ -354,9 +354,9 @@ typedef struct ball{
 		x /= wp;
 		y /= wp;
 		z /= wp;
-		printf("%f %f\n",x,y);
+		//printf("%f %f\n",x,y);
 		if (onground()&&collision_ground){
-			printf("onground\n");
+			//printf("onground\n");
 			collision_ground=false;
 
 		 }
@@ -385,7 +385,7 @@ typedef struct ball{
 		//float ang = -1.f*pipe_rot*M_PI/180.f;
 		//ang = 0.5*M_PI - ang;
 		//float vel = 500;
-		printf("shooted vel:%f\n",vel);
+		//printf("shooted vel:%f\n",vel);
 		st = glfwGetTime();
 		lu=glfwGetTime();
 		isshoot=ballinsky=true;
@@ -410,7 +410,7 @@ typedef struct ball{
 			ti-=st;
 			//printf("sx: %f sy: %f\n",sx,sy);
 			if(isshoot&&abs(velx-0.0)<=(float)10e-10&&velx<=0){    //ball came to rest (Important buggy not coming to rest on top of an obstacle)
-				printf("at rest in fire\n");
+				//printf("at rest in fire\n");
 				init();
 				// isshoot=ballinsky=false;
 				// sx=sy=0;
@@ -423,7 +423,7 @@ typedef struct ball{
 			vel = sqrt(velx*velx +vely*vely);
 			if(vely<=0)falling=true;
 			else falling = false;
-			printf("velx:%f vely:%f\n",velx,vely);
+			//printf("velx:%f vely:%f\n",velx,vely);
 		}
 		//ti+=0.1;
 		project = glm::translate(glm::vec3(nx,ny,0));
@@ -476,16 +476,14 @@ typedef struct ground
 	void checkCollision(ball &b){
 		float alpha=0.8,ang,beta=0.8;
 		if(b.onground()&&b.falling&&!b.collision_ground){
-			printf("delta %lf\n",glfwGetTime()-lasttime );
+			//printf("delta %lf\n",glfwGetTime()-lasttime );
 			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(glfwGetTime()-lasttime<=0.5)||(b.velx<=0&&abs(b.velx)<=0.1&&b.vely<0&&abs(b.vely)>=10)){    //ball came to rest (if time diff b/w two arrivals <=0.5 init())
-				printf("at rest in ground\n");
 				b.init();
-				printf("new vel %f\n",b.vel);
 				s=1;
 				return;
 			}
 			lasttime=glfwGetTime();
-			printf("collided ground x:%f y:%f \n",b.x,b.y);
+			//printf("collided ground x:%f y:%f \n",b.x,b.y);
 			b.collision_ground=b.falling=true;
 			b.sx=b.x-b.stx,b.sy=b.y-b.sty;
 			b.vel = sqrt((beta*beta*b.velx*b.velx + alpha*alpha*b.vely*b.vely));  //alpha of collision = 1/600
@@ -756,9 +754,6 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_DOWN:
 				ZOOM*=2;
 				break;
-			case GLFW_KEY_P:
-				triangle_rot_status = !triangle_rot_status;
-				break;
 			
 			case GLFW_KEY_SPACE:
 				ang = -1.f*pipe_rot*M_PI/180.f;  //don't mess with ang
@@ -790,7 +785,6 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_3:
 				if(my.isshoot&&my.shootpower){
 					for(int i=0;i<2;++i){
-						printf("myx:%f myy:%f\n",my.x,my.y);
 						powerball[i].sx=my.x-STX;
 						powerball[i].sy=my.y-STY;
 						powerball[i].stx=STX;
@@ -1148,7 +1142,6 @@ void draw ()
 	for(int i=0;i<2;++i){
 		if(powerball[i].isshoot){
 			powerball[i].fire(s);
-			printf("%d ball fired\n",i+1);
 		}
 	}
 	if(my.power){
@@ -1409,8 +1402,8 @@ int main (int argc, char** argv)
 
 		// Poll for Keyboard and mouse events
 		glfwPollEvents();
-		if(glfwGetKey(window,GLFW_KEY_J)==GLFW_PRESS)pipe_rot+=1;
-		if(glfwGetKey(window,GLFW_KEY_L)==GLFW_PRESS)pipe_rot-=1;
+		if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS)pipe_rot+=1;
+		if(glfwGetKey(window,GLFW_KEY_B)==GLFW_PRESS)pipe_rot-=1;
 		
 		// Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
 		current_time = glfwGetTime(); // Time in seconds
@@ -1448,18 +1441,18 @@ int main (int argc, char** argv)
 				// if(!my.isshoot)my.vel*=my.k;
 				// my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
 			}
-			if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS){
+			if(glfwGetKey(window,GLFW_KEY_LEFT)==GLFW_PRESS){
 				if(PANX>0&&MANPAN)PANX-=10.0;
 			}
-			if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS){
+			if(glfwGetKey(window,GLFW_KEY_RIGHT)==GLFW_PRESS){
 				if(PANX<650&&MANPAN)PANX+=10.0;
 			}
-			if(glfwGetKey(window,GLFW_KEY_P)==GLFW_PRESS){
+			if(glfwGetKey(window,GLFW_KEY_F)==GLFW_PRESS){
 				s*=0.99;
 				if(!my.isshoot)my.vel*=my.k;
 				my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
 			}
-			if(glfwGetKey(window,GLFW_KEY_M)==GLFW_PRESS){
+			if(glfwGetKey(window,GLFW_KEY_S)==GLFW_PRESS){
 				if(s<1){
 					s/=0.99;
 					my.translate = glm::translate(glm::vec3(0,my.rs*50.0-50.0,0));
