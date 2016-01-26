@@ -476,7 +476,7 @@ typedef struct ground
 		float alpha=0.5,ang,beta=0.5;
 		if(b.onground()&&b.falling&&!b.collision_ground){
 			printf("delta %lf\n",glfwGetTime()-lasttime );
-			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(glfwGetTime()-lasttime<=0.05)){    //ball came to rest (if time diff b/w two arrivals <=0.5 init())
+			if(abs(b.velx-0.0)<=(double)10e-18&&b.velx<=0||(glfwGetTime()-lasttime<=0.5)||(b.velx<=0&&abs(b.velx)<=0.1&&b.vely<0&&abs(b.vely)>=10)){    //ball came to rest (if time diff b/w two arrivals <=0.5 init())
 				printf("at rest in ground\n");
 				b.init();
 				printf("new vel %f\n",b.vel);
